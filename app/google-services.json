@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "381359273636",
+    "firebase_url": "https://police-map-22d2d-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "police-map-22d2d",
+    "storage_bucket": "police-map-22d2d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:381359273636:android:ad80ee34dda2e17f639831",
+        "android_client_info": {
+          "package_name": "com.example.policemap"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "381359273636-e5jrgthfr6p3rpt1up7sd8q8v3e74n2m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCf04nnXC7YMo1Sb-RyOm9zTuZK0fr9ojA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "381359273636-e5jrgthfr6p3rpt1up7sd8q8v3e74n2m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
