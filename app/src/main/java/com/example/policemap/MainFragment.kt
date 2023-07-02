@@ -8,6 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.policemap.databinding.ActivityMainBinding
@@ -74,8 +75,14 @@ class MainFragment : Fragment() {
         }
         mapButton.setOnClickListener {
             val destFragment = MapsFragment()
-            parentFragmentManager.beginTransaction()
-                .replace(ActivityMainBinding.inflate(layoutInflater).root.id,destFragment).commit()
+//            parentFragmentManager.beginTransaction()
+//                .replace(ActivityMainBinding.inflate(layoutInflater).root.id,destFragment).commit()
+            requireActivity().supportFragmentManager.beginTransaction()
+                .replace(
+                    requireActivity().findViewById<CoordinatorLayout>(R.id.fragment_container).id,
+                    destFragment
+                )
+                .commit()
         }
 
         return rootView
