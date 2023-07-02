@@ -44,6 +44,7 @@ class MapsFragment : Fragment() {
 //        googleMap.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
         addClusteredMarkers(googleMap)
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(places[0].latLng, 15.0F))
+
     }
 
     override fun onCreateView(
@@ -116,6 +117,7 @@ class MapsFragment : Fragment() {
                 clusterManager
             )
 
+
         // Set custom info window adapter
         clusterManager.markerCollection.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
 
@@ -126,7 +128,19 @@ class MapsFragment : Fragment() {
         // Set ClusterManager as the OnCameraIdleListener so that it
         // can re-cluster when zooming in and out.
         googleMap.setOnCameraIdleListener {
+            // When the camera stops moving, change the alpha value back to opaque.
+            clusterManager.markerCollection.markers.forEach { it.alpha = 1.0f }
+            clusterManager.clusterMarkerCollection.markers.forEach { it.alpha = 1.0f }
+
+            // Call clusterManager.onCameraIdle() when the camera stops moving so that reclustering
+            // can be performed when the camera stops moving.
             clusterManager.onCameraIdle()
+        }
+
+        // When the camera starts moving, change the alpha value of the marker to translucent.
+        googleMap.setOnCameraMoveStartedListener {
+            clusterManager.markerCollection.markers.forEach { it.alpha = 0.4f }
+            clusterManager.clusterMarkerCollection.markers.forEach { it.alpha = 0.4f }
         }
     }
 }
