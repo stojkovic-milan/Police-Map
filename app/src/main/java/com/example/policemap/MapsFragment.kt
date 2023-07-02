@@ -6,15 +6,27 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import com.example.policemap.data.model.Place
+import com.example.policemap.data.model.Type
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
+import java.util.*
 
 class MapsFragment : Fragment() {
+
+    private val places: List<Place> = listOf(
+        Place("Radar", LatLng(43.313850, 21.897023), Date(), 4.8F, Type.Radar),
+        Place("Kontrola", LatLng(43.314952, 21.894705), Date(), 2.1F, Type.Control),
+        Place("Kamera", LatLng(43.314952, 21.895705), Date(), 4.5F, Type.Camera),
+        Place("Patrola", LatLng(43.315952, 21.897705), Date(), 4.1F, Type.Patrol)
+    )
 
     private val callback = OnMapReadyCallback { googleMap ->
         /**
@@ -26,9 +38,10 @@ class MapsFragment : Fragment() {
          * install it inside the SupportMapFragment. This method will only be triggered once the
          * user has installed Google Play services and returned to the app.
          */
-        val sydney = LatLng(-34.0, 151.0)
-        googleMap.addMarker(MarkerOptions().position(sydney).title("Marker in Sydney"))
-        googleMap.moveCamera(CameraUpdateFactory.newLatLng(sydney))
+        addMarkers(googleMap)
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(places[0].latLng, 15.0F))
+        // Set custom info window adapter
+        googleMap.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
     }
 
     override fun onCreateView(
@@ -41,7 +54,50 @@ class MapsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
+        val mapFragment =
+            childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
+    }
+
+    private val stopIcon: BitmapDescriptor by lazy {
+//        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_stop_48)
+    }
+    private val radarIcon: BitmapDescriptor by lazy {
+//        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_radar_32)
+    }
+    private val cameraIcon: BitmapDescriptor by lazy {
+//        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_camera_32)
+    }
+    private val patrolIcon: BitmapDescriptor by lazy {
+//        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_patrol_32)
+    }
+
+    /**
+     * Adds marker representations of the places list on the provided GoogleMap object
+     */
+    private fun addMarkers(googleMap: GoogleMap) {
+        places.forEach { place ->
+            val marker = googleMap.addMarker(
+                MarkerOptions()
+                    .title(place.name)
+                    .position(place.latLng)
+                    .icon(
+                        when (place.type) {
+                            Type.Radar -> radarIcon
+                            Type.Control -> stopIcon
+                            Type.Camera -> cameraIcon
+                            else -> patrolIcon
+                        }
+                    )
+            )
+
+            // Set place as the tag on the marker object so it can be referenced within
+            // MarkerInfoWindowAdapter
+            marker.tag = place
+        }
     }
 }

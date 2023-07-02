@@ -10,10 +10,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
-import com.example.policemap.databinding.ActivityMainBinding
 import com.example.policemap.ui.login.LoginActivity
-import com.google.android.gms.maps.MapFragment
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
@@ -57,7 +54,7 @@ class MainFragment : Fragment() {
         var rootView = inflater.inflate(R.layout.fragment_main, container, false)
 
         button = rootView.findViewById(R.id.logout)
-        mapButton = rootView.findViewById(R.id.map)
+        mapButton = rootView.findViewById(R.id.mapButton)
         textView = rootView.findViewById(R.id.user_details)
         if (auth.currentUser == null) {
             var intent = Intent(activity, MainActivity::class.java)
