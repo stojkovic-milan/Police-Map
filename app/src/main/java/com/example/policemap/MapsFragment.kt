@@ -44,22 +44,12 @@ class MapsFragment : Fragment() {
          * user has installed Google Play services and returned to the app.
          */
         this.googleMap = googleMap
-//        addMarkers(googleMap)
-        // Set custom info window adapter
-//        googleMap.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
         addClusteredMarkers(googleMap)
-//        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(places[0].latLng, 15.0F))
 
         val mainActivity = activity as MainActivity
         val currentLocation = mainActivity.getCurrentLocation()
 
         updateLocation(currentLocation)
-//        val latLng = LatLng(currentLocation.latitude, currentLocation.longitude)
-//        val markerOptions = MarkerOptions().position(latLng).title("I am here!").icon(waypointIcon)
-//        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
-//        myMarker = googleMap?.addMarker(markerOptions)
-//        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0F))
-
     }
     private val waypointIcon: BitmapDescriptor by lazy {
         BitmapHelper.vectorToBitmap(requireContext(), R.drawable.pointer_32)
@@ -82,48 +72,6 @@ class MapsFragment : Fragment() {
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
     }
-//
-//    private val stopIcon: BitmapDescriptor by lazy {
-////        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
-//        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_stop_48)
-//    }
-//    private val radarIcon: BitmapDescriptor by lazy {
-////        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
-//        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_radar_32)
-//    }
-//    private val cameraIcon: BitmapDescriptor by lazy {
-////        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
-//        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_camera_32)
-//    }
-//    private val patrolIcon: BitmapDescriptor by lazy {
-////        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
-//        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_patrol_32)
-//    }
-
-    /**
-     * Adds marker representations of the places list on the provided GoogleMap object
-     */
-//    private fun addMarkers(googleMap: GoogleMap) {
-//        places.forEach { place ->
-//            val marker = googleMap.addMarker(
-//                MarkerOptions()
-//                    .title(place.name)
-//                    .position(place.latLng)
-//                    .icon(
-//                        when (place.type) {
-//                            Type.Radar -> radarIcon
-//                            Type.Control -> stopIcon
-//                            Type.Camera -> cameraIcon
-//                            else -> patrolIcon
-//                        }
-//                    )
-//            )
-//
-//            // Set place as the tag on the marker object so it can be referenced within
-//            // MarkerInfoWindowAdapter
-//            marker.tag = place
-//        }
-//    }
 
     /**
      * Adds markers to the map with clustering support.

@@ -36,7 +36,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var currentLocation: Location
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private val permissionCode = 101
-
     //Live Location
     private lateinit var locationCallback: LocationCallback
 
@@ -65,15 +64,8 @@ class MainActivity : AppCompatActivity() {
         fetchLocation()
     }
 
-    private val callback = OnMapReadyCallback { googleMap ->
-        val latLng = LatLng(currentLocation.latitude, currentLocation.longitude)
-        val markerOptions = MarkerOptions().position(latLng).title("I am here!")
-        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
-        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5f))
-        googleMap?.addMarker(markerOptions)
-    }
-
     private fun fetchLocation() {
+        //Permission check
         if (ActivityCompat.checkSelfPermission(
                 this, Manifest.permission.ACCESS_FINE_LOCATION
             ) !=
@@ -88,17 +80,14 @@ class MainActivity : AppCompatActivity() {
             )
             return
         }
-        //Live location test
+
+        //Live location callback
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult ?: return
                 for (location in locationResult.locations) {
                     currentLocation = location
                     // Update the location in MapsFragment
-//                    val mapsFragment =
-//                        supportFragmentManager.findFragmentById(R.id.map) as? MapsFragment
-//                    mapsFragment?.updateLocation(currentLocation)
-//                    requireActivity().findViewById<CoordinatorLayout>(R.id.fragment_container).id,
                     val mapsFragment = supportFragmentManager
                         .findFragmentById(R.id.fragment_container) as? MapsFragment
                     mapsFragment?.updateLocation(currentLocation)
@@ -111,26 +100,11 @@ class MainActivity : AppCompatActivity() {
             fastestInterval = 5000
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
-
         fusedLocationProviderClient.requestLocationUpdates(
             locationRequest,
             locationCallback,
             null
         )
-//        val task = fusedLocationProviderClient.lastLocation
-//        task.addOnSuccessListener { location ->
-//            if (location != null) {
-//                currentLocation = location
-//                Toast.makeText(
-//                    applicationContext, currentLocation.latitude.toString() + "" +
-//                            currentLocation.longitude, Toast.LENGTH_SHORT
-//                ).show()
-////                val supportMapFragment = (supportFragmentManager.findFragmentById(R.id.map) as
-////                        SupportMapFragment?)!!
-////                supportMapFragment.getMapAsync(callback)
-//            }
-//        }
-
     }
 
     fun getCurrentLocation(): Location {
