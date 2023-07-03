@@ -62,4 +62,6 @@
     <string name="register_instead">Register instead</string>
     <string name="MainFragmentLabel">Main Fragment</string>
     <string name="map">Map</string>
+    <string name="upload_take_picture">Upload/Take Picture</string>
+    <string name="add_picture">Add picture</string>
 </resources>

@@ -7,12 +7,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
+import com.bumptech.glide.request.RequestOptions
 import com.example.policemap.ui.login.LoginActivity
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
 
 
 // TODO: Rename parameter arguments, choose names that match
@@ -35,7 +41,8 @@ class MainFragment : Fragment() {
     private lateinit var mapButton: Button
     private lateinit var textView: TextView
     private lateinit var user: FirebaseUser
-
+    private lateinit var profileImage: ImageView
+    private lateinit var storageRef: StorageReference
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -56,6 +63,8 @@ class MainFragment : Fragment() {
         button = rootView.findViewById(R.id.logout)
         mapButton = rootView.findViewById(R.id.mapButton)
         textView = rootView.findViewById(R.id.user_details)
+        profileImage = rootView.findViewById(R.id.profile_image)
+
         if (auth.currentUser == null) {
             var intent = Intent(activity, MainActivity::class.java)
             startActivity(intent)
@@ -63,6 +72,17 @@ class MainFragment : Fragment() {
         } else {
             user = auth.currentUser!!
             textView.text = "Welcome, ${user.email?.replace("@policemap.com", "")}"
+
+            //Show profile picture
+            val currentUser = FirebaseAuth.getInstance().currentUser
+            storageRef = FirebaseStorage.getInstance().reference
+                .child("users")
+                .child(currentUser?.uid ?: "")
+                .child("${user.email?.replace("@policemap.com", "")}.jpg")
+
+            // Load the image into the ImageView
+            loadProfileImage()
+
         }
         button.setOnClickListener {
             auth.signOut()
@@ -83,6 +103,20 @@ class MainFragment : Fragment() {
         }
 
         return rootView
+    }
+
+    private fun loadProfileImage() {
+        storageRef.downloadUrl.addOnSuccessListener { uri ->
+            val imageUrl = uri.toString()
+
+            // Use Glide to load the image into the ImageView
+            Glide.with(this)
+                .load(imageUrl)
+                .apply(RequestOptions().transform(CenterCrop()))
+                .into(profileImage)
+        }.addOnFailureListener { exception ->
+            // Handle any errors that occurred while retrieving the download URL
+        }
     }
 
     companion object {

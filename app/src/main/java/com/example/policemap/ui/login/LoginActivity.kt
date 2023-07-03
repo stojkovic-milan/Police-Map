@@ -151,7 +151,7 @@ class LoginActivity : AppCompatActivity() {
                         "Login successful.",
                         Toast.LENGTH_SHORT,
                     ).show()
-                    //TODO: Add main activity and uncoment after adding
+
                     var intent = Intent(baseContext, MainActivity::class.java)
                     startActivity(intent)
                     finish()
