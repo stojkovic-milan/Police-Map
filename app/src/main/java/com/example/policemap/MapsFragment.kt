@@ -1,5 +1,6 @@
 package com.example.policemap
 
+import android.location.Location
 import androidx.fragment.app.Fragment
 
 import android.os.Bundle
@@ -16,6 +17,7 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
@@ -28,6 +30,8 @@ class MapsFragment : Fragment() {
         Place("Kamera", LatLng(43.314952, 21.895705), Date(), 4.5F, Type.Camera),
         Place("Patrola", LatLng(43.315952, 21.897705), Date(), 4.1F, Type.Patrol)
     )
+    private var googleMap: GoogleMap? = null
+    private var myMarker: Marker? = null
 
     private val callback = OnMapReadyCallback { googleMap ->
         /**
@@ -39,6 +43,7 @@ class MapsFragment : Fragment() {
          * install it inside the SupportMapFragment. This method will only be triggered once the
          * user has installed Google Play services and returned to the app.
          */
+        this.googleMap = googleMap
 //        addMarkers(googleMap)
         // Set custom info window adapter
 //        googleMap.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
@@ -48,16 +53,19 @@ class MapsFragment : Fragment() {
         val mainActivity = activity as MainActivity
         val currentLocation = mainActivity.getCurrentLocation()
 
-        val latLng = LatLng(currentLocation.latitude, currentLocation.longitude)
-        val markerOptions = MarkerOptions().position(latLng).title("I am here!").icon(waypointIcon)
-        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
-        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 5f))
-        googleMap?.addMarker(markerOptions)
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0F))
+        updateLocation(currentLocation)
+//        val latLng = LatLng(currentLocation.latitude, currentLocation.longitude)
+//        val markerOptions = MarkerOptions().position(latLng).title("I am here!").icon(waypointIcon)
+//        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+//        myMarker = googleMap?.addMarker(markerOptions)
+//        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15.0F))
 
     }
     private val waypointIcon: BitmapDescriptor by lazy {
         BitmapHelper.vectorToBitmap(requireContext(), R.drawable.pointer_32)
+    }
+    private val gpsIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.gps_16)
     }
 
     override fun onCreateView(
@@ -130,7 +138,6 @@ class MapsFragment : Fragment() {
                 clusterManager
             )
 
-
         // Set custom info window adapter
         clusterManager.markerCollection.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
 
@@ -142,18 +149,23 @@ class MapsFragment : Fragment() {
         // can re-cluster when zooming in and out.
         googleMap.setOnCameraIdleListener {
             // When the camera stops moving, change the alpha value back to opaque.
-            clusterManager.markerCollection.markers.forEach { it.alpha = 1.0f }
-            clusterManager.clusterMarkerCollection.markers.forEach { it.alpha = 1.0f }
+//            clusterManager.markerCollection.markers.forEach { it.alpha = 1.0f }
+//            clusterManager.clusterMarkerCollection.markers.forEach { it.alpha = 1.0f }
 
             // Call clusterManager.onCameraIdle() when the camera stops moving so that reclustering
             // can be performed when the camera stops moving.
             clusterManager.onCameraIdle()
         }
+    }
 
-        // When the camera starts moving, change the alpha value of the marker to translucent.
-        googleMap.setOnCameraMoveStartedListener {
-            clusterManager.markerCollection.markers.forEach { it.alpha = 0.4f }
-            clusterManager.clusterMarkerCollection.markers.forEach { it.alpha = 0.4f }
-        }
+    fun updateLocation(currentLocation: Location?) {
+        val latLng = LatLng(currentLocation!!.latitude, currentLocation.longitude)
+        val markerOptions = MarkerOptions().position(latLng).title("Vi ste ovde!").icon(gpsIcon)
+//        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+        if (myMarker == null)
+            myMarker = googleMap?.addMarker(markerOptions)
+        else
+            myMarker!!.position = latLng
+        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
     }
 }

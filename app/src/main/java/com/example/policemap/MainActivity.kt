@@ -14,8 +14,6 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.policemap.data.model.Place
 import com.example.policemap.databinding.ActivityMainBinding
-import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
@@ -23,6 +21,11 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import java.util.*
 import android.Manifest
+import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.findFragment
+import com.google.android.gms.location.*
+import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
 
 class MainActivity : AppCompatActivity() {
@@ -33,6 +36,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var currentLocation: Location
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private val permissionCode = 101
+
+    //Live Location
+    private lateinit var locationCallback: LocationCallback
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -81,19 +88,49 @@ class MainActivity : AppCompatActivity() {
             )
             return
         }
-        val task = fusedLocationProviderClient.lastLocation
-        task.addOnSuccessListener { location ->
-            if (location != null) {
-                currentLocation = location
-                Toast.makeText(
-                    applicationContext, currentLocation.latitude.toString() + "" +
-                            currentLocation.longitude, Toast.LENGTH_SHORT
-                ).show()
-//                val supportMapFragment = (supportFragmentManager.findFragmentById(R.id.map) as
-//                        SupportMapFragment?)!!
-//                supportMapFragment.getMapAsync(callback)
+        //Live location test
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult?) {
+                locationResult ?: return
+                for (location in locationResult.locations) {
+                    currentLocation = location
+                    // Update the location in MapsFragment
+//                    val mapsFragment =
+//                        supportFragmentManager.findFragmentById(R.id.map) as? MapsFragment
+//                    mapsFragment?.updateLocation(currentLocation)
+//                    requireActivity().findViewById<CoordinatorLayout>(R.id.fragment_container).id,
+                    val mapsFragment = supportFragmentManager
+                        .findFragmentById(R.id.fragment_container) as? MapsFragment
+                    mapsFragment?.updateLocation(currentLocation)
+
+                }
             }
         }
+        val locationRequest = LocationRequest.create().apply {
+            interval = 10000
+            fastestInterval = 5000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+
+        fusedLocationProviderClient.requestLocationUpdates(
+            locationRequest,
+            locationCallback,
+            null
+        )
+//        val task = fusedLocationProviderClient.lastLocation
+//        task.addOnSuccessListener { location ->
+//            if (location != null) {
+//                currentLocation = location
+//                Toast.makeText(
+//                    applicationContext, currentLocation.latitude.toString() + "" +
+//                            currentLocation.longitude, Toast.LENGTH_SHORT
+//                ).show()
+////                val supportMapFragment = (supportFragmentManager.findFragmentById(R.id.map) as
+////                        SupportMapFragment?)!!
+////                supportMapFragment.getMapAsync(callback)
+//            }
+//        }
+
     }
 
     fun getCurrentLocation(): Location {
@@ -118,5 +155,10 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration)
                 || super.onSupportNavigateUp()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
 }
