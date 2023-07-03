@@ -8,10 +8,7 @@ import android.provider.MediaStore
 import android.text.TextUtils
 import android.util.Log
 import android.view.View
-import android.widget.Button
-import android.widget.ProgressBar
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.policemap.data.model.LoggedInUser
 import com.example.policemap.ui.login.LoginActivity
@@ -30,9 +27,10 @@ class Register : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var progressBar: ProgressBar
     private lateinit var loginInstead: TextView
+    private lateinit var imgPreview: ImageView
 
     private lateinit var btnUploadPicture: Button
-    private lateinit var pictureBitmap: Bitmap
+    private var pictureBitmap: Bitmap? = null
 
     public override fun onStart() {
         super.onStart()
@@ -51,6 +49,7 @@ class Register : AppCompatActivity() {
                 val imageBitmap = result.data?.extras?.get("data") as Bitmap
                 // Save the pictureBitmap and use it for further processing
                 pictureBitmap = imageBitmap
+                imgPreview.setImageBitmap(pictureBitmap)
             }
         }
 
@@ -64,6 +63,7 @@ class Register : AppCompatActivity() {
         progressBar = findViewById(R.id.progressBar)
         loginInstead = findViewById(R.id.loginNow)
         btnUploadPicture = findViewById(R.id.btn_upload_picture)
+        imgPreview = findViewById(R.id.img_preview)
 
         loginInstead.setOnClickListener {
             var intent = Intent(baseContext, LoginActivity::class.java)
@@ -72,15 +72,18 @@ class Register : AppCompatActivity() {
         }
         buttonReg.setOnClickListener {
             progressBar.visibility = View.VISIBLE
-            var email: String
-            var password: String
-            email = editTextEmail.text.toString()
-            password = editTextPassword.text.toString()
+            var email: String = editTextEmail.text.toString()
+            var password: String = editTextPassword.text.toString()
 
             if (TextUtils.isEmpty(email)) {
                 Toast.makeText(baseContext, "Enter email", Toast.LENGTH_SHORT).show()
+                progressBar.visibility = View.GONE
             } else if (TextUtils.isEmpty(password)) {
                 Toast.makeText(baseContext, "Enter password", Toast.LENGTH_SHORT).show()
+                progressBar.visibility = View.GONE
+            } else if (pictureBitmap == null) {
+                Toast.makeText(baseContext, "Select picture!", Toast.LENGTH_SHORT).show()
+                progressBar.visibility = View.GONE
             } else {
                 auth.createUserWithEmailAndPassword("$email@policemap.com", password)
                     .addOnCompleteListener(this) { task ->
@@ -175,14 +178,6 @@ class Register : AppCompatActivity() {
             }
         }
 
-    }
-
-    fun takePicture() {
-//        if(PermissionHelper.isCameraPermissionGranted(requireContext())){
-//            val cameraIntent: Intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-//            resultLauncher.launch(cameraIntent)
-//        }
-//        else {requestPermissionLauncher.launch(Manifest.permission.CAMERA)}
     }
 
 }
