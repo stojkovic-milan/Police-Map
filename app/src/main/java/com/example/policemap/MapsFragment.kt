@@ -19,6 +19,7 @@ import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
 
@@ -32,7 +33,8 @@ class MapsFragment : Fragment() {
     )
     private var googleMap: GoogleMap? = null
     private var myMarker: Marker? = null
-
+    private var follow: Boolean = false
+    private var fabFollow: FloatingActionButton? = null
     private val callback = OnMapReadyCallback { googleMap ->
         /**
          * Manipulates the map once available.
@@ -45,17 +47,20 @@ class MapsFragment : Fragment() {
          */
         this.googleMap = googleMap
         addClusteredMarkers(googleMap)
-
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.313850, 21.897023), 15f))
         val mainActivity = activity as MainActivity
         val currentLocation = mainActivity.getCurrentLocation()
-
+        googleMap.setOnCameraMoveStartedListener { reason ->
+            if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE)
+                setFollow(false)
+        }
         updateLocation(currentLocation)
     }
     private val waypointIcon: BitmapDescriptor by lazy {
         BitmapHelper.vectorToBitmap(requireContext(), R.drawable.pointer_32)
     }
     private val gpsIcon: BitmapDescriptor by lazy {
-        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.gps_16)
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.gps_26)
     }
 
     override fun onCreateView(
@@ -68,9 +73,31 @@ class MapsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        fabFollow = view.findViewById(R.id.fabFollow)
+
+        fabFollow?.setOnClickListener {
+            setFollow(!follow)
+        }
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
+    }
+
+    private fun setFollow(newValue: Boolean) {
+        follow = newValue
+        if (newValue) {
+            val location = Location("CurrentLocation")
+            location.latitude = myMarker?.position?.latitude!!
+            location.longitude = myMarker?.position?.longitude!!
+            updateLocation(location)
+        }
+        fabFollow?.imageTintList = null
+        fabFollow?.setImageDrawable(
+            ContextCompat.getDrawable(
+                requireContext(),
+                if (newValue) R.drawable.gps_32 else R.drawable.gps_black_64
+            )
+        )
     }
 
     /**
@@ -109,11 +136,22 @@ class MapsFragment : Fragment() {
     fun updateLocation(currentLocation: Location?) {
         val latLng = LatLng(currentLocation!!.latitude, currentLocation.longitude)
         val markerOptions = MarkerOptions().position(latLng).title("Vi ste ovde!").icon(gpsIcon)
+            .anchor(0.5f, 0.5f) // Set the anchor point to the center of the marker icon
+            .infoWindowAnchor(
+                0.5f,
+                0.5f
+            ) // Set the info window anchor point to the center of the marker icon
+
 //        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
         if (myMarker == null)
             myMarker = googleMap?.addMarker(markerOptions)
         else
             myMarker!!.position = latLng
-        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15f))
+        if (follow) {
+            val zoomLevel = googleMap!!.cameraPosition.zoom // Get the current zoom level
+            val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, zoomLevel)
+            googleMap?.animateCamera(cameraUpdate)
+        }
+//        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
     }
 }

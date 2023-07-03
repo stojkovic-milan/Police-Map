@@ -51,7 +51,7 @@ class MarkerInfoWindowAdapter(
         ).text = dateOutput
         view.findViewById<TextView>(
             R.id.text_view_rating
-        ).text = "Rating: %.2f".format(place.rating)
+        ).text = " %.2f ".format(place.rating)
 
         return view
     }
