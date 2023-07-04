@@ -1,9 +1,8 @@
 package com.example.policemap
 
 import android.content.Context
-import androidx.core.content.ContextCompat
 import com.example.policemap.data.model.Place
-import com.example.policemap.data.model.Type
+import com.example.policemap.data.model.PlaceType
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.Marker
@@ -42,13 +41,13 @@ class PlaceRenderer(
         item: Place,
         markerOptions: MarkerOptions
     ) {
-        markerOptions.title(item.name)
-            .position(item.latLng)
+        markerOptions.title(item.placeType.toString())
+            .position(item.latLng!!)
             .icon(
-                when (item.type) {
-                    Type.Radar -> radarIcon
-                    Type.Control -> stopIcon
-                    Type.Camera -> cameraIcon
+                when (item.placeType) {
+                    PlaceType.Radar -> radarIcon
+                    PlaceType.Control -> stopIcon
+                    PlaceType.Camera -> cameraIcon
                     else -> patrolIcon
                 }
             )

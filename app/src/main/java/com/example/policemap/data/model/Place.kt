@@ -5,22 +5,26 @@ import com.google.maps.android.clustering.ClusterItem
 import java.util.*
 
 data class Place(
-    val name: String,
-    val latLng: LatLng,
-    val time: Date,
-    val rating: Float,
-    val type: Type
+    val id: String? = null,
+//    val name: String? = null,
+    val latLng: LatLng? = null,
+    val time: Date? = null,
+    val rating: Int? = null,
+    val placeType: PlaceType? = null,
+    val userId: String? = null,
+    val expirationTime: Date? = null,
+//    val anon: Boolean? = true
 ) : ClusterItem {
     override fun getPosition(): LatLng =
-        latLng
+        latLng!!
 
     override fun getTitle(): String =
-        name
+        placeType.toString()
 
     override fun getSnippet(): String =
         time.toString()
 }
 
-enum class Type {
+enum class PlaceType {
     Control, Patrol, Radar, Camera
 }

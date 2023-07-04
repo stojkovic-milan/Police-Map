@@ -7,9 +7,11 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentTransaction
 import com.example.policemap.data.model.Place
-import com.example.policemap.data.model.Type
+import com.example.policemap.data.model.PlaceType
 
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
@@ -25,16 +27,22 @@ import java.util.*
 
 class MapsFragment : Fragment() {
 
-    private val places: List<Place> = listOf(
-        Place("Radar", LatLng(43.313850, 21.897023), Date(), 4.8F, Type.Radar),
-        Place("Kontrola", LatLng(43.314952, 21.894705), Date(), 2.1F, Type.Control),
-        Place("Kamera", LatLng(43.314952, 21.895705), Date(), 4.5F, Type.Camera),
-        Place("Patrola", LatLng(43.315952, 21.897705), Date(), 4.1F, Type.Patrol)
+    private val places: MutableList<Place> = mutableListOf(
+        Place(null, LatLng(43.313850, 21.897023), Date(), 4, PlaceType.Radar),
+        Place(null, LatLng(43.314952, 21.894705), Date(), 2, PlaceType.Control),
+        Place(null, LatLng(43.314952, 21.895705), Date(), -5, PlaceType.Camera),
+        Place(null, LatLng(43.315952, 21.897705), Date(), 1, PlaceType.Patrol)
     )
     private var googleMap: GoogleMap? = null
     private var myMarker: Marker? = null
+    private var lastLocation: LatLng? = null
+
     private var follow: Boolean = false
+    private var addingPlace: Boolean = false
+    private var newMarker: Marker? = null
+
     private var fabFollow: FloatingActionButton? = null
+    private lateinit var fabAdd: FloatingActionButton
     private val callback = OnMapReadyCallback { googleMap ->
         /**
          * Manipulates the map once available.
@@ -54,7 +62,22 @@ class MapsFragment : Fragment() {
             if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE)
                 setFollow(false)
         }
+//        googleMap.setOnMarkerDragListener(object : OnMarkerDragListener {
+//            override fun onMarkerDragStart(marker: Marker?) {
+//                TODO("Not yet implemented")
+//            }
+//
+//            override fun onMarkerDrag(marker: Marker?) {
+//                TODO("Not yet implemented")
+//            }
+//
+//            override fun onMarkerDragEnd(marker: Marker?) {
+//                TODO("Not yet implemented")
+////                markerPos = marker.position
+//            }
+//        })
         updateLocation(currentLocation)
+
     }
     private val waypointIcon: BitmapDescriptor by lazy {
         BitmapHelper.vectorToBitmap(requireContext(), R.drawable.pointer_32)
@@ -74,9 +97,12 @@ class MapsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         fabFollow = view.findViewById(R.id.fabFollow)
-
+        fabAdd = view.findViewById(R.id.fabAdd)
         fabFollow?.setOnClickListener {
             setFollow(!follow)
+        }
+        fabAdd.setOnClickListener {
+            onAddPlace()
         }
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
@@ -98,6 +124,86 @@ class MapsFragment : Fragment() {
                 if (newValue) R.drawable.gps_32 else R.drawable.gps_black_64
             )
         )
+    }
+
+    private val addIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.add_location_32)
+    }
+
+    private fun onAddPlace() {
+        if (!addingPlace) {
+            //Add new temporary draggable marker
+            addingPlace = true
+            val latLng = lastLocation
+            val markerOptions =
+                MarkerOptions().position(
+                    (if (latLng != null) latLng
+                    else googleMap?.cameraPosition?.target)!!
+                )
+                    .title("Nova lokacija").icon(addIcon)
+                    .zIndex(1.0f)
+                    .draggable(true)
+//                    .anchor(0.5f, 0.5f) // Set the anchor point to the center of the marker icon
+//                    .infoWindowAnchor(
+//                        0.5f,
+//                        0.5f
+//                    ) // Set the info window anchor point to the center of the marker icon
+            Toast.makeText(
+                requireContext(),
+                "Drag marker to accurate location of report!",
+                Toast.LENGTH_LONG
+            ).show()
+            newMarker = googleMap?.addMarker(markerOptions)
+            googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18F))
+        } else {
+            //Confirm marker location and enter next data
+//            fabAdd.hide()
+            addingPlace = false
+            newMarker?.setIcon(stopIcon)
+
+            //Centering on location in rest of the screen, under dialog
+            googleMap?.animateCamera(
+                CameraUpdateFactory.newLatLngZoom(
+                    LatLng(
+                        newMarker!!.position.latitude + 0.0008F,
+                        newMarker!!.position.longitude
+                    ), 18F
+                )
+            )
+
+            showDialog()
+//            places.add(Place("Novo Mesto", newMarker!!.position, Date(), 1.0f, Type.Control))
+//            newMarker!!.remove()
+//            addClusteredMarkers(googleMap!!)
+
+        }
+        fabAdd?.setImageDrawable(
+            ContextCompat.getDrawable(
+                requireContext(),
+                if (addingPlace) R.drawable.checkmark_512 else R.drawable.add_location
+            )
+        )
+    }
+
+    private fun showDialog() {
+        val fragmentManager = parentFragmentManager
+        val newFragment = AddPlaceDialogFragment()
+        //Passing location to addPlaceDialog
+        val arguments = Bundle()
+        arguments.putDouble("lat", newMarker?.position?.latitude ?: 0.0)
+        arguments.putDouble("lng", newMarker?.position?.longitude ?: 0.0)
+        newFragment.arguments = arguments
+
+        // The device is smaller, so show the fragment fullscreen
+        val transaction = fragmentManager.beginTransaction()
+        // For a little polish, specify a transition animation
+        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+        // To make it fullscreen, use the 'content' root view as the container
+        // for the fragment, which is always the root view for the activity
+        transaction
+            .add(android.R.id.content, newFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     /**
@@ -135,6 +241,7 @@ class MapsFragment : Fragment() {
 
     fun updateLocation(currentLocation: Location?) {
         val latLng = LatLng(currentLocation!!.latitude, currentLocation.longitude)
+        lastLocation = latLng
         val markerOptions = MarkerOptions().position(latLng).title("Vi ste ovde!").icon(gpsIcon)
             .anchor(0.5f, 0.5f) // Set the anchor point to the center of the marker icon
             .infoWindowAnchor(
@@ -153,5 +260,19 @@ class MapsFragment : Fragment() {
             googleMap?.animateCamera(cameraUpdate)
         }
 //        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+    }
+
+    private val stopIcon: BitmapDescriptor by lazy {
+//        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_stop_48)
+    }
+    private val radarIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_radar_32)
+    }
+    private val cameraIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_camera_32)
+    }
+    private val patrolIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_patrol_32)
     }
 }

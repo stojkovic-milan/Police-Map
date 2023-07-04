@@ -8,9 +8,6 @@ import com.example.policemap.data.model.Place
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.Marker
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.Period
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 class MarkerInfoWindowAdapter(
@@ -26,12 +23,11 @@ class MarkerInfoWindowAdapter(
         )
         view.findViewById<TextView>(
             R.id.text_view_title
-        ).text = place.name
-        //TODO: Add check if it's less then an hour ago, then display how many minutes ago else display exact time
+        ).text = place.placeType.toString()
         val pattern = "HH:mm:ss"
         val simpleDateFormat = SimpleDateFormat(pattern)
 
-        val diff: Long = Date().time - place.time.time
+        val diff: Long = Date().time - place.time!!.time
         val seconds = diff / 1000
         val minutes = seconds / 60
         val hours = minutes / 60
@@ -51,7 +47,7 @@ class MarkerInfoWindowAdapter(
         ).text = dateOutput
         view.findViewById<TextView>(
             R.id.text_view_rating
-        ).text = " %.2f ".format(place.rating)
+        ).text = " %d ".format(place.rating)
 
         return view
     }

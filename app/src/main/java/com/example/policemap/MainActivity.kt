@@ -27,6 +27,7 @@ import androidx.fragment.app.findFragment
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.MapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
+import com.google.firebase.FirebaseApp
 
 class MainActivity : AppCompatActivity() {
 
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var currentLocation: Location
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private val permissionCode = 101
+
     //Live Location
     private lateinit var locationCallback: LocationCallback
 
@@ -43,9 +45,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
-
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        FirebaseApp.initializeApp(applicationContext)
 
         setSupportActionBar(binding.toolbar)
 
