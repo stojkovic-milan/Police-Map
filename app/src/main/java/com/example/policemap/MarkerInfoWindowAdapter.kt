@@ -54,52 +54,54 @@ class MarkerInfoWindowAdapter(
             R.id.text_view_rating
         ).text = " %d ".format(place.rating)
 
-        var buttonPlus: Button = view.findViewById(R.id.button_plus)
-        buttonPlus.setOnClickListener {
-            Toast.makeText(
-                context,
-                "+ clicked",
-                Toast.LENGTH_LONG
-            ).show()
-            place.rating = place.rating!! + 1
-            updatePlaceRatingDb(place, place.rating!!)
-        }
-        var buttonMinus: Button = view.findViewById(R.id.button_minus)
-        buttonMinus.setOnClickListener {
-            Toast.makeText(
-                context,
-                "- clicked",
-                Toast.LENGTH_LONG
-            ).show()
-            place.rating = place.rating!! - 1
-            updatePlaceRatingDb(place, place.rating!!)
-        }
+//        var buttonPlus: Button = view.findViewById(R.id.button_plus)
+//        buttonPlus.setOnClickListener {
+//            Toast.makeText(
+//                context,
+//                "+ clicked",
+//                Toast.LENGTH_LONG
+//            ).show()
+//            place.rating = place.rating!! + 1
+//            updatePlaceRatingDb(place, place.rating!!)
+//        }
+//        var buttonMinus: Button = view.findViewById(R.id.button_minus)
+//        buttonMinus.setOnClickListener {
+//            Toast.makeText(
+//                context,
+//                "- clicked",
+//                Toast.LENGTH_LONG
+//            ).show()
+//            place.rating = place.rating!! - 1
+//            updatePlaceRatingDb(place, place.rating!!)
+//
+//        }
+
         return view
     }
 
-    private fun updatePlaceRatingDb(place: Place, newRating: Int) {
-
-        val placeRef = db.collection("places").document(place.id!!)
-
-        placeRef
-            .update("rating", newRating)
-            .addOnSuccessListener {
-                // Rating was successfully updated
-                Toast.makeText(
-                    context,
-                    "Rating updated successfully!",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-            .addOnFailureListener { e ->
-                // Handle any errors that occurred during the update operation
-                Toast.makeText(
-                    context,
-                    "Error occurred when updating rating!",
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-    }
+//    private fun updatePlaceRatingDb(place: Place, newRating: Int) {
+//
+//        val placeRef = db.collection("places").document(place.id!!)
+//
+//        placeRef
+//            .update("rating", newRating)
+//            .addOnSuccessListener {
+//                // Rating was successfully updated
+//                Toast.makeText(
+//                    context,
+//                    "Rating updated successfully!",
+//                    Toast.LENGTH_LONG
+//                ).show()
+//            }
+//            .addOnFailureListener { e ->
+//                // Handle any errors that occurred during the update operation
+//                Toast.makeText(
+//                    context,
+//                    "Error occurred when updating rating!",
+//                    Toast.LENGTH_LONG
+//                ).show()
+//            }
+//    }
 
     override fun getInfoWindow(marker: Marker?): View? {
         // Return null to indicate that the

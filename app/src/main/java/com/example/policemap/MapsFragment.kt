@@ -27,7 +27,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
 
-class MapsFragment : Fragment() {
+class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     private val db = FirebaseFirestore.getInstance()
     private val placesList = mutableListOf<Place>()
 
@@ -81,9 +81,10 @@ class MapsFragment : Fragment() {
 //            }
 //        })
 
-        googleMap.setOnInfoWindowClickListener { marker ->
-            // Leave this method empty to make the info window not clickable
-        }
+//        googleMap.setOnInfoWindowClickListener { marker ->
+//            // Leave this method empty to make the info window not clickable
+//            Toast.makeText(context, "InfoWindow clicked", Toast.LENGTH_LONG).show()
+//        }
         updateLocation(currentLocation)
 
     }
@@ -235,7 +236,7 @@ class MapsFragment : Fragment() {
         // To make it fullscreen, use the 'content' root view as the container
         // for the fragment, which is always the root view for the activity
         transaction
-            .add(android.R.id.content, newFragment)
+            .add(R.id.fragment_container, newFragment)
             .addToBackStack(null)
             .commit()
     }
@@ -255,6 +256,12 @@ class MapsFragment : Fragment() {
 
         // Set custom info window adapter
         clusterManager.markerCollection.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
+        clusterManager.markerCollection.setOnInfoWindowClickListener {
+            Toast.makeText(context, "InfoWindow clickedDDDD", Toast.LENGTH_LONG).show()
+            var targetPlace: Place? = findPlaceByLocation(it.position)
+            if (targetPlace != null) showRateDialog(targetPlace)
+        }
+
 
         // Add the places to the ClusterManager.
         clusterManager.addItems(placesList)
@@ -270,6 +277,82 @@ class MapsFragment : Fragment() {
             // Call clusterManager.onCameraIdle() when the camera stops moving so that reclustering
             // can be performed when the camera stops moving.
             clusterManager.onCameraIdle()
+        }
+    }
+
+    private fun findPlaceByLocation(desiredLocation: LatLng): Place? {
+        for (place in placesList) {
+            if (place.latLng == desiredLocation) {
+                return place
+            }
+        }
+        return null
+    }
+
+    private fun findPlaceById(id: String): Place? {
+        for (place in placesList) {
+            if (place.id == id) {
+                return place
+            }
+        }
+        return null
+    }
+
+    private fun showRateDialog(place: Place) {
+        val fragmentManager = parentFragmentManager
+        val newFragment = RatingDialogFragment()
+        newFragment.setRatingDialogCallback(this)
+
+        //Passing location to addPlaceDialog
+        val arguments = Bundle()
+        arguments.putInt("rating", place.rating!!)
+        arguments.putString("id", place.id)
+        newFragment.arguments = arguments
+
+        // The device is smaller, so show the fragment fullscreen
+        val transaction = fragmentManager.beginTransaction()
+        // For a little polish, specify a transition animation
+        transaction.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+        // To make it fullscreen, use the 'content' root view as the container
+        // for the fragment, which is always the root view for the activity
+        transaction
+            .add(android.R.id.content, newFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    override fun onRatingSubmitted(placeId: String, rating: Int) {
+        // Handle the submitted rating here
+        // You can update the map or perform any other action based on the rating
+        Toast.makeText(
+            context,
+            "Rating received %d back for place %s".format(rating, placeId),
+            Toast.LENGTH_LONG
+        ).show()
+        updatePlaceRatingDb(placeId, rating)
+    }
+
+    private fun updatePlaceRatingDb(placeId: String, increment: Int) {
+
+        val placeRef = db.collection("places").document(placeId)
+//TODO: Check this
+//Using transaction to ensure atomicity when updating rating
+        db.runTransaction { transaction ->
+            val placeDoc = transaction.get(placeRef)
+            val currentRating = placeDoc.getLong("rating") ?: 0
+            val newRating = currentRating + increment
+            transaction.update(placeRef, "rating", newRating)
+        }.addOnSuccessListener {
+            Toast.makeText(
+                context,
+                "Rating updated successfully!",
+                Toast.LENGTH_LONG
+            ).show()
+            var ratedPlace = findPlaceById(placeId)
+            //TODO: Update place rating on map
+        }.addOnFailureListener { e ->
+            // Error occurred during the rating update
+            // Handle the error here
         }
     }
 
