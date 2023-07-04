@@ -9,7 +9,7 @@ data class Place(
 //    val name: String? = null,
     val latLng: LatLng? = null,
     val time: Date? = null,
-    val rating: Int? = null,
+    var rating: Int? = null,
     val placeType: PlaceType? = null,
     val userId: String? = null,
     val expirationTime: Date? = null,
@@ -28,3 +28,14 @@ data class Place(
 enum class PlaceType {
     Control, Patrol, Radar, Camera
 }
+
+data class PlaceDb(
+    val id: String? = null,
+    val lat: Double? = null,
+    val lng: Double? = null,
+    val time: Date? = null,
+    var rating: Int? = null,
+    val placeType: PlaceType? = null,
+    val userId: String? = null,
+    val expirationTime: Date? = null,
+)

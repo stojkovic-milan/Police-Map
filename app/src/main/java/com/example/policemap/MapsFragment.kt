@@ -11,6 +11,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentTransaction
 import com.example.policemap.data.model.Place
+import com.example.policemap.data.model.PlaceDb
 import com.example.policemap.data.model.PlaceType
 
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -22,10 +23,13 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
 
 class MapsFragment : Fragment() {
+    private val db = FirebaseFirestore.getInstance()
+    private val placesList = mutableListOf<Place>()
 
     private val places: MutableList<Place> = mutableListOf(
         Place(null, LatLng(43.313850, 21.897023), Date(), 4, PlaceType.Radar),
@@ -54,7 +58,7 @@ class MapsFragment : Fragment() {
          * user has installed Google Play services and returned to the app.
          */
         this.googleMap = googleMap
-        addClusteredMarkers(googleMap)
+//        addClusteredMarkers(googleMap)
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.313850, 21.897023), 15f))
         val mainActivity = activity as MainActivity
         val currentLocation = mainActivity.getCurrentLocation()
@@ -76,6 +80,10 @@ class MapsFragment : Fragment() {
 ////                markerPos = marker.position
 //            }
 //        })
+
+        googleMap.setOnInfoWindowClickListener { marker ->
+            // Leave this method empty to make the info window not clickable
+        }
         updateLocation(currentLocation)
 
     }
@@ -96,6 +104,32 @@ class MapsFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        val placesCollection = db.collection("places")
+        placesCollection.get()
+            .addOnSuccessListener { querySnapshot ->
+                // Iterate over the documents in the query snapshot
+                for (document in querySnapshot) {
+                    // Get the data of each document as a Place object
+                    val placeDb = document.toObject(PlaceDb::class.java)
+                    val place = Place(
+                        placeDb.id,
+                        LatLng(placeDb.lat!!, placeDb.lng!!),
+                        placeDb.time,
+                        placeDb.rating,
+                        placeDb.placeType,
+                        placeDb.userId,
+                        placeDb.expirationTime,
+                    )
+                    // Add the place to the list
+                    placesList.add(place)
+                }
+                addClusteredMarkers(googleMap!!)
+            }
+            .addOnFailureListener { e ->
+                // Handle any errors that occurred during the retrieval
+                // ...
+            }
+
         fabFollow = view.findViewById(R.id.fabFollow)
         fabAdd = view.findViewById(R.id.fabAdd)
         fabFollow?.setOnClickListener {
@@ -223,7 +257,7 @@ class MapsFragment : Fragment() {
         clusterManager.markerCollection.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
 
         // Add the places to the ClusterManager.
-        clusterManager.addItems(places)
+        clusterManager.addItems(placesList)
         clusterManager.cluster()
 
         // Set ClusterManager as the OnCameraIdleListener so that it

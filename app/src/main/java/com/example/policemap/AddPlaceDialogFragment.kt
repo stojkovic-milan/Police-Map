@@ -10,6 +10,7 @@ import android.view.Window
 import android.widget.*
 import androidx.fragment.app.DialogFragment
 import com.example.policemap.data.model.Place
+import com.example.policemap.data.model.PlaceDb
 import com.example.policemap.data.model.PlaceType
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
@@ -94,7 +95,16 @@ class AddPlaceDialogFragment : DialogFragment() {
                 2
             ) else expirationTime.add(Calendar.MINUTE, 30)
             //TODO: Add empty and null checks here
-            val newPlace = Place(placeId, location, time, 1, placeType, userId, expirationTime.time)
+            val newPlace = PlaceDb(
+                placeId,
+                location.latitude,
+                location.longitude,
+                time,
+                1,
+                placeType,
+                userId,
+                expirationTime.time
+            )
             db.collection("places").document(placeId).set(newPlace)
                 .addOnSuccessListener {
                     // Document was successfully written
