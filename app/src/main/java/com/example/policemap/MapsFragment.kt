@@ -85,10 +85,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 //            }
 //        })
 
-//        googleMap.setOnInfoWindowClickListener { marker ->
-//            // Leave this method empty to make the info window not clickable
-//            Toast.makeText(context, "InfoWindow clicked", Toast.LENGTH_LONG).show()
-//        }
         updateLocation(currentLocation)
 
     }
@@ -269,30 +265,36 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             )
         )
         clusterManager.markerCollection.setOnInfoWindowClickListener {
-            Toast.makeText(context, "InfoWindow clickedDDDD", Toast.LENGTH_LONG).show()
             val place = it?.tag as? Place ?: return@setOnInfoWindowClickListener
             //Check if user has already rated this report
-            //TODO: Check each place when adding to cluster, below only check map
-            checkIfPlaceRatedByUser(
-                place.id!!,
-                auth.currentUser?.uid.toString()
-            ) { isRated ->
-                if (isRated) {
-                    markerRatingMap[it] = true
-                    // The place has been rated by the user
-                    // Do something
-                } else {
-                    // The place has not been rated by the user
-                    // Do something else
-                    markerRatingMap[it] = false
-                    showRateDialog(place)
-                }
-            }
-        }
+            val isRated: Boolean = placeRatingMap[place] ?: false
 
+            if (isRated) {
+                markerRatingMap[it] = true
+                // The place has been rated by the user
+                // Do something
+            } else {
+                // The place has not been rated by the user
+                // Do something else
+                markerRatingMap[it] = false
+                val distance = calculateDistanceBetweenLatLng(place.latLng!!, lastLocation!!)
+                //Can rate places in radius of 3KM
+                if (distance < 3000)
+                    showRateDialog(place)
+                else
+                    Toast.makeText(
+                        context,
+                        "You are too far to rate this report!",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+            }
+
+        }
 
         // Add the places to the ClusterManager.
         //TODO: Optimise this part, dont check for every place, check instead only for needed places
+        // or it will be optimised later when using GeoFire
         placesList.forEach {
             checkIfPlaceRatedByUser(
                 it.id!!,
@@ -316,6 +318,19 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             // can be performed when the camera stops moving.
             clusterManager.onCameraIdle()
         }
+    }
+
+
+    fun calculateDistanceBetweenLatLng(point1: LatLng, point2: LatLng): Float {
+        val location1 = Location("point1")
+        location1.latitude = point1.latitude
+        location1.longitude = point1.longitude
+
+        val location2 = Location("point2")
+        location2.latitude = point2.latitude
+        location2.longitude = point2.longitude
+
+        return location1.distanceTo(location2)
     }
 
     private fun checkIfPlaceRatedByUser(
