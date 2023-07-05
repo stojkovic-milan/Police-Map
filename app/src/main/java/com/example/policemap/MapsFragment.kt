@@ -114,6 +114,8 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
                 for (document in querySnapshot) {
                     // Get the data of each document as a Place object
                     val placeDb = document.toObject(PlaceDb::class.java)
+                    if (placeDb.expirationTime!!.before(Date()))
+                        continue
                     val place = Place(
                         placeDb.id,
                         LatLng(placeDb.lat!!, placeDb.lng!!),
@@ -414,6 +416,13 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             val currentRating = placeDoc.getLong("rating") ?: 0
             val newRating = currentRating + increment
             transaction.update(placeRef, "rating", newRating)
+
+            //Extend/Decrease expiration time for 5 minutes per each rating
+            val currentExpTime = placeDoc.getDate("expirationTime")
+            val expirationTime: Calendar = Calendar.getInstance()
+            expirationTime.time = currentExpTime
+            expirationTime.add(Calendar.MINUTE, 5 * increment)
+            transaction.update(placeRef, "expirationTime", expirationTime.time)
             //Saving users that rated place
             val usersWhoRatedRef =
                 placeRef.collection("usersWhoRated") // create a subcollection called "usersWhoRated"
