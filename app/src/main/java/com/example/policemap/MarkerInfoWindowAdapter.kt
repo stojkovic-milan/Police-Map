@@ -12,9 +12,13 @@ import com.google.android.gms.maps.model.Marker
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.collections.HashMap
 
 class MarkerInfoWindowAdapter(
-    private val context: Context
+    private val context: Context,
+//    private val ratedMap: HashMap<Marker, Boolean>
+    private val ratedMap: HashMap<Place, Boolean>
+
 ) : GoogleMap.InfoWindowAdapter {
     private val db = FirebaseFirestore.getInstance()
 
@@ -26,6 +30,8 @@ class MarkerInfoWindowAdapter(
         val view = LayoutInflater.from(context).inflate(
             R.layout.marker_info_contents, null
         )
+
+
         view.findViewById<TextView>(
             R.id.text_view_title
         ).text = place.placeType.toString()
@@ -54,54 +60,15 @@ class MarkerInfoWindowAdapter(
             R.id.text_view_rating
         ).text = " %d ".format(place.rating)
 
-//        var buttonPlus: Button = view.findViewById(R.id.button_plus)
-//        buttonPlus.setOnClickListener {
-//            Toast.makeText(
-//                context,
-//                "+ clicked",
-//                Toast.LENGTH_LONG
-//            ).show()
-//            place.rating = place.rating!! + 1
-//            updatePlaceRatingDb(place, place.rating!!)
-//        }
-//        var buttonMinus: Button = view.findViewById(R.id.button_minus)
-//        buttonMinus.setOnClickListener {
-//            Toast.makeText(
-//                context,
-//                "- clicked",
-//                Toast.LENGTH_LONG
-//            ).show()
-//            place.rating = place.rating!! - 1
-//            updatePlaceRatingDb(place, place.rating!!)
-//
-//        }
-
+        val hasRated = ratedMap[place] ?: false
+        if (hasRated) {
+            val rateButton = view.findViewById<Button>(R.id.rateButton)
+            rateButton.text = "Rated!"
+            rateButton.isEnabled = false
+        }
         return view
     }
 
-//    private fun updatePlaceRatingDb(place: Place, newRating: Int) {
-//
-//        val placeRef = db.collection("places").document(place.id!!)
-//
-//        placeRef
-//            .update("rating", newRating)
-//            .addOnSuccessListener {
-//                // Rating was successfully updated
-//                Toast.makeText(
-//                    context,
-//                    "Rating updated successfully!",
-//                    Toast.LENGTH_LONG
-//                ).show()
-//            }
-//            .addOnFailureListener { e ->
-//                // Handle any errors that occurred during the update operation
-//                Toast.makeText(
-//                    context,
-//                    "Error occurred when updating rating!",
-//                    Toast.LENGTH_LONG
-//                ).show()
-//            }
-//    }
 
     override fun getInfoWindow(marker: Marker?): View? {
         // Return null to indicate that the

@@ -23,6 +23,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
@@ -30,6 +31,9 @@ import java.util.*
 class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     private val db = FirebaseFirestore.getInstance()
     private val placesList = mutableListOf<Place>()
+    private lateinit var auth: FirebaseAuth
+    private val markerRatingMap = HashMap<Marker, Boolean>()
+    private val placeRatingMap = HashMap<Place, Boolean>()
 
     private val places: MutableList<Place> = mutableListOf(
         Place(null, LatLng(43.313850, 21.897023), Date(), 4, PlaceType.Radar),
@@ -105,6 +109,8 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        auth = FirebaseAuth.getInstance()
+
         val placesCollection = db.collection("places")
         placesCollection.get()
             .addOnSuccessListener { querySnapshot ->
@@ -255,15 +261,47 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             )
 
         // Set custom info window adapter
-        clusterManager.markerCollection.setInfoWindowAdapter(MarkerInfoWindowAdapter(requireContext()))
+        clusterManager.markerCollection.setInfoWindowAdapter(
+            MarkerInfoWindowAdapter(
+                requireContext(),
+//                markerRatingMap
+                placeRatingMap
+            )
+        )
         clusterManager.markerCollection.setOnInfoWindowClickListener {
             Toast.makeText(context, "InfoWindow clickedDDDD", Toast.LENGTH_LONG).show()
-            var targetPlace: Place? = findPlaceByLocation(it.position)
-            if (targetPlace != null) showRateDialog(targetPlace)
+            val place = it?.tag as? Place ?: return@setOnInfoWindowClickListener
+            //Check if user has already rated this report
+            //TODO: Check each place when adding to cluster, below only check map
+            checkIfPlaceRatedByUser(
+                place.id!!,
+                auth.currentUser?.uid.toString()
+            ) { isRated ->
+                if (isRated) {
+                    markerRatingMap[it] = true
+                    // The place has been rated by the user
+                    // Do something
+                } else {
+                    // The place has not been rated by the user
+                    // Do something else
+                    markerRatingMap[it] = false
+                    showRateDialog(place)
+                }
+            }
         }
 
 
         // Add the places to the ClusterManager.
+        //TODO: Optimise this part, dont check for every place, check instead only for needed places
+        placesList.forEach {
+            checkIfPlaceRatedByUser(
+                it.id!!,
+                auth.currentUser?.uid.toString()
+            ) { isRated ->
+//                markerRatingMap[it] = isRated
+                placeRatingMap[it] = isRated
+            }
+        }
         clusterManager.addItems(placesList)
         clusterManager.cluster()
 
@@ -278,6 +316,24 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             // can be performed when the camera stops moving.
             clusterManager.onCameraIdle()
         }
+    }
+
+    private fun checkIfPlaceRatedByUser(
+        placeId: String,
+        userId: String,
+        callback: (Boolean) -> Unit
+    ) {
+        val usersWhoRatedRef = db.collection("places").document(placeId).collection("usersWhoRated")
+        usersWhoRatedRef.document(userId)
+            .get()
+            .addOnSuccessListener { documentSnapshot ->
+                val isRated = documentSnapshot.exists()
+                callback(isRated)
+            }
+            .addOnFailureListener { exception ->
+                // Handle the error here
+                callback(false) // Assume it is not rated in case of an error
+            }
     }
 
     private fun findPlaceByLocation(desiredLocation: LatLng): Place? {
@@ -338,10 +394,15 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 //TODO: Check this
 //Using transaction to ensure atomicity when updating rating
         db.runTransaction { transaction ->
+            val userId = auth.currentUser?.uid.toString()
             val placeDoc = transaction.get(placeRef)
             val currentRating = placeDoc.getLong("rating") ?: 0
             val newRating = currentRating + increment
             transaction.update(placeRef, "rating", newRating)
+            //Saving users that rated place
+            val usersWhoRatedRef =
+                placeRef.collection("usersWhoRated") // create a subcollection called "usersWhoRated"
+            transaction.set(usersWhoRatedRef.document(userId), mapOf("rated" to true))
         }.addOnSuccessListener {
             Toast.makeText(
                 context,
@@ -353,6 +414,11 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
         }.addOnFailureListener { e ->
             // Error occurred during the rating update
             // Handle the error here
+            Toast.makeText(
+                context,
+                "Faiure updating rating!",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
