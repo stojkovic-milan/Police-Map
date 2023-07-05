@@ -30,7 +30,8 @@ class AddPlaceDialogFragment : DialogFragment() {
     private lateinit var buttonAdd: Button
     private lateinit var buttonDiscard: Button
     private lateinit var typeRadioGroup: RadioGroup
-
+    private val database =
+        Firebase.database("https://police-map-22d2d-default-rtdb.europe-west1.firebasedatabase.app/")
     private var selectedDateTime: Calendar = Calendar.getInstance()
     private val db = FirebaseFirestore.getInstance()
 //        Firebase.fire("https://police-map-22d2d-default-rtdb.europe-west1.firebasedatabase.app/")
@@ -105,15 +106,29 @@ class AddPlaceDialogFragment : DialogFragment() {
                 userId,
                 expirationTime.time
             )
-            db.collection("places").document(placeId).set(newPlace)
+            val userRef = database.reference.child("users").child(userId)
+            val placeRef = db.collection("places").document(placeId)
+            placeRef.set(newPlace)
                 .addOnSuccessListener {
                     // Document was successfully written
-                    Toast.makeText(
-                        requireContext(),
-                        "New report added successfully!",
-                        Toast.LENGTH_LONG
-                    )
-                        .show()
+                    val usersWhoRatedRef =
+                        placeRef.collection("usersWhoRated") // create a subcollection called "usersWhoRated"
+                    usersWhoRatedRef.document(userId).set(mapOf("rated" to true))
+
+
+                    userRef.get().addOnSuccessListener { userDataSnapshot ->
+                        val currentPoints =
+                            userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
+                        val increasedPoints = currentPoints + 100
+                        userRef.child("points").setValue(increasedPoints)
+                            .addOnSuccessListener {
+                                Toast.makeText(
+                                    requireContext(),
+                                    "New report added successfully!",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                    }
                 }
                 .addOnFailureListener { e ->
                     // Handle any errors that occurred during the write operation

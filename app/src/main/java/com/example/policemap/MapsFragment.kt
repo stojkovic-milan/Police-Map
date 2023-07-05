@@ -24,7 +24,9 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.ktx.Firebase
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
 
@@ -44,6 +46,8 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     private var googleMap: GoogleMap? = null
     private var myMarker: Marker? = null
     private var lastLocation: LatLng? = null
+    private val database =
+        Firebase.database("https://police-map-22d2d-default-rtdb.europe-west1.firebasedatabase.app/")
 
     private var follow: Boolean = false
     private var addingPlace: Boolean = false
@@ -403,18 +407,21 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             Toast.LENGTH_LONG
         ).show()
         updatePlaceRatingDb(placeId, rating)
+
     }
 
     private fun updatePlaceRatingDb(placeId: String, increment: Int) {
 
         val placeRef = db.collection("places").document(placeId)
+        val userId = auth.currentUser?.uid.toString()
+        var reportingUserId: String? = null
 //TODO: Check this
 //Using transaction to ensure atomicity when updating rating
         db.runTransaction { transaction ->
-            val userId = auth.currentUser?.uid.toString()
             val placeDoc = transaction.get(placeRef)
             val currentRating = placeDoc.getLong("rating") ?: 0
             val newRating = currentRating + increment
+            reportingUserId = placeDoc.getString("userId")
             transaction.update(placeRef, "rating", newRating)
 
             //Extend/Decrease expiration time for 5 minutes per each rating
@@ -433,8 +440,35 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
                 "Rating updated successfully!",
                 Toast.LENGTH_LONG
             ).show()
-            var ratedPlace = findPlaceById(placeId)
+
+            if (userId != null && reportingUserId != null) {
+                val currentUserRef =
+                    database.reference.child("users").child(userId)
+                val reportingUserRef =
+                    database.reference.child("users").child(reportingUserId!!)
+
+                currentUserRef.get().addOnSuccessListener { userDataSnapshot ->
+                    val currentPoints =
+                        userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
+                    val increasedPoints = currentPoints + 10
+                    currentUserRef.child("points").setValue(increasedPoints)
+                        .addOnSuccessListener {
+                            Toast.makeText(
+                                requireContext(),
+                                "You just gained 10 pints for rating!",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                }
+                reportingUserRef.get().addOnSuccessListener { userDataSnapshot ->
+                    val currentPoints =
+                        userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
+                    val increasedPoints = currentPoints + 20
+                    reportingUserRef.child("points").setValue(increasedPoints)
+                }
+            }
             //TODO: Update place rating on map
+//            var ratedPlace = findPlaceById(placeId)
         }.addOnFailureListener { e ->
             // Error occurred during the rating update
             // Handle the error here
@@ -444,6 +478,33 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
                 Toast.LENGTH_LONG
             ).show()
         }
+//        if (userId != null && reportingUserId != null) {
+//            val currentUserRef =
+//                database.reference.child("users").child(userId)
+//            val reportingUserRef =
+//                database.reference.child("users").child(reportingUserId!!)
+//
+//            currentUserRef.get().addOnSuccessListener { userDataSnapshot ->
+//                val currentPoints =
+//                    userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
+//                val increasedPoints = currentPoints + 10
+//                currentUserRef.child("points").setValue(increasedPoints)
+//                    .addOnSuccessListener {
+//                        Toast.makeText(
+//                            requireContext(),
+//                            "You just gained 10 pints for rating!",
+//                            Toast.LENGTH_SHORT
+//                        ).show()
+//                    }
+//            }
+//            reportingUserRef.get().addOnSuccessListener { userDataSnapshot ->
+//                val currentPoints =
+//                    userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
+//                val increasedPoints = currentPoints + 20
+//                reportingUserRef.child("points").setValue(increasedPoints)
+//            }
+//        }
+
     }
 
     fun updateLocation(currentLocation: Location?) {

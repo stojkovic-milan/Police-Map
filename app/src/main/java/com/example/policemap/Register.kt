@@ -175,7 +175,7 @@ class Register : AppCompatActivity() {
             if (task.isSuccessful) {
                 val imageUrl = task.result.toString()
 
-                val user = User(userID, name, email, number, imageUrl)
+                val user = User(userID, name, email, number, imageUrl, 0)
 //                val user = User(name.value, imageUrl)
 //                val user = LoggedInUser(userID, email)
                 val database =
