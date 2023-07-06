@@ -1,19 +1,21 @@
 package com.example.policemap
 
 import android.location.Location
-import androidx.fragment.app.Fragment
-
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
 import com.example.policemap.data.model.Place
 import com.example.policemap.data.model.PlaceDb
 import com.example.policemap.data.model.PlaceType
-
+import com.firebase.geofire.GeoFire
+import com.firebase.geofire.GeoLocation
+import com.firebase.geofire.GeoQuery
+import com.firebase.geofire.GeoQueryEventListener
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
@@ -23,19 +25,28 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
 
+
 class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     private val db = FirebaseFirestore.getInstance()
     private val placesList = mutableListOf<Place>()
     private lateinit var auth: FirebaseAuth
-    private val markerRatingMap = HashMap<Marker, Boolean>()
-    private val placeRatingMap = HashMap<Place, Boolean>()
+
+    //    private val markerRatingMap = HashMap<Marker, Boolean>()
+    private val placeRatingMap = HashMap<String, Boolean>()
+    private val currentRatingsMap = HashMap<String, Int>()
+    private lateinit var geoFire: GeoFire
+    private lateinit var geoQuery: GeoQuery
+    private lateinit var clusterManager: ClusterManager<Place>
 
     private val places: MutableList<Place> = mutableListOf(
         Place(null, LatLng(43.313850, 21.897023), Date(), 4, PlaceType.Radar),
@@ -89,7 +100,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 ////                markerPos = marker.position
 //            }
 //        })
-
+        initializeClusterManager(googleMap)
         updateLocation(currentLocation)
 
     }
@@ -111,34 +122,95 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         auth = FirebaseAuth.getInstance()
+        val ref = FirebaseDatabase.getInstance().getReference("geofire")
+        geoFire = GeoFire(ref)
+        val queryCenter = GeoLocation(lastLocation?.latitude ?: 0.0, lastLocation?.longitude ?: 0.0)
+        val queryRadius = 1.0 // in kilometers
+        geoQuery = geoFire.queryAtLocation(queryCenter, queryRadius)
+        var keyList: MutableList<String> = mutableListOf()
 
-        val placesCollection = db.collection("places")
-        placesCollection.get()
-            .addOnSuccessListener { querySnapshot ->
-                // Iterate over the documents in the query snapshot
-                for (document in querySnapshot) {
-                    // Get the data of each document as a Place object
-                    val placeDb = document.toObject(PlaceDb::class.java)
-                    if (placeDb.expirationTime!!.before(Date()))
-                        continue
-                    val place = Place(
-                        placeDb.id,
-                        LatLng(placeDb.lat!!, placeDb.lng!!),
-                        placeDb.time,
-                        placeDb.rating,
-                        placeDb.placeType,
-                        placeDb.userId,
-                        placeDb.expirationTime,
-                    )
-                    // Add the place to the list
-                    placesList.add(place)
+        geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
+            override fun onKeyEntered(key: String?, location: GeoLocation?) {
+                // Key entered the query area, display the place on the map or list view
+                if (key != null && location != null) {
+                    val placeLatitude = location.latitude
+                    val placeLongitude = location.longitude
+                    // Display the place using its key, latitude, and longitude
+                    keyList.add(key)
+                    val placeRef = db.collection("places").document(key)
+                    placeRef.get().addOnSuccessListener {
+                        val placeDb = it.toObject(PlaceDb::class.java)
+                        if (placeDb!!.expirationTime!!.before(Date()))
+                            return@addOnSuccessListener
+                        val place = Place(
+                            placeDb.id,
+                            LatLng(placeDb.lat!!, placeDb.lng!!),
+                            placeDb.time,
+                            placeDb.rating,
+                            placeDb.placeType,
+                            placeDb.userId,
+                            placeDb.expirationTime,
+                        )
+                        // Add the place to the list
+//                        placesList.add(place)
+                        addClusteredMarker(place)
+                    }
+                        .addOnFailureListener { e ->
+                            // Handle any errors that occurred during the retrieval
+                            // ...
+                        }
                 }
-                addClusteredMarkers(googleMap!!)
             }
-            .addOnFailureListener { e ->
-                // Handle any errors that occurred during the retrieval
-                // ...
+
+            override fun onKeyExited(key: String?) {
+                // Key exited the query area, remove the place from the map or list view
+                keyList.remove(key)
+
             }
+
+            override fun onKeyMoved(key: String?, location: GeoLocation?) {
+                // Key moved within the query area, update the place's position on the map or list view
+            }
+
+            override fun onGeoQueryReady() {
+                // All initial place data has been loaded, do any final processing or UI updates
+            }
+
+            override fun onGeoQueryError(error: DatabaseError?) {
+                // Handle any errors that occurred during the query
+            }
+        })
+
+//        initializeClusterManager()
+
+//        val placesCollection = db.collection("places")
+//        placesCollection.get()
+//            .addOnSuccessListener { querySnapshot ->
+//                // Iterate over the documents in the query snapshot
+//                for (document in querySnapshot) {
+//                    // Get the data of each document as a Place object
+//                    val placeDb = document.toObject(PlaceDb::class.java)
+//                    if (placeDb.expirationTime!!.before(Date()))
+//                        continue
+//                    val place = Place(
+//                        placeDb.id,
+//                        LatLng(placeDb.lat!!, placeDb.lng!!),
+//                        placeDb.time,
+//                        placeDb.rating,
+//                        placeDb.placeType,
+//                        placeDb.userId,
+//                        placeDb.expirationTime,
+//                    )
+//                    // Add the place to the list
+//                    placesList.add(place)
+//                }
+////                addClusteredMarkers(googleMap!!)
+////                initializeClusterManager()
+//            }
+//            .addOnFailureListener { e ->
+//                // Handle any errors that occurred during the retrieval
+//                // ...
+//            }
 
         fabFollow = view.findViewById(R.id.fabFollow)
         fabAdd = view.findViewById(R.id.fabAdd)
@@ -205,11 +277,15 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 //                        0.5f,
 //                        0.5f
 //                    ) // Set the info window anchor point to the center of the marker icon
-            Toast.makeText(
-                requireContext(),
+
+            Snackbar.make(
+                view!!,
                 "Drag marker to accurate location of report!",
-                Toast.LENGTH_LONG
-            ).show()
+                Snackbar.LENGTH_LONG
+            )
+                .setAnchorView(R.id.fab)
+                .setAction("Action", null).show()
+
             newMarker = googleMap?.addMarker(markerOptions)
             googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18F))
         } else {
@@ -244,13 +320,12 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 
     private fun showDialog() {
         val fragmentManager = parentFragmentManager
-        val newFragment = AddPlaceDialogFragment()
+        val newFragment = AddPlaceDialogFragment(newMarker!!)
         //Passing location to addPlaceDialog
         val arguments = Bundle()
         arguments.putDouble("lat", newMarker?.position?.latitude ?: 0.0)
         arguments.putDouble("lng", newMarker?.position?.longitude ?: 0.0)
         newFragment.arguments = arguments
-
         // The device is smaller, so show the fragment fullscreen
         val transaction = fragmentManager.beginTransaction()
         // For a little polish, specify a transition animation
@@ -266,9 +341,37 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     /**
      * Adds markers to the map with clustering support.
      */
-    private fun addClusteredMarkers(googleMap: GoogleMap) {
-        // Create the ClusterManager class and set the custom renderer.
-        val clusterManager = ClusterManager<Place>(requireContext(), googleMap)
+    private fun addClusteredMarker(place: Place) {
+        currentRatingsMap[place.id!!] = place.rating!!
+        //Attach listener to keep rating updated
+        val placeRef = db.collection("places").document(place.id!!)
+        val listener = placeRef.addSnapshotListener { snapshot, exception ->
+            if (exception != null) {
+                // Handle any errors that occurred
+                return@addSnapshotListener
+            }
+
+            if (snapshot != null && snapshot.exists()) {
+                val rating = snapshot.getLong("rating")?.toInt()
+                // Handle the updated rating value here
+                if (rating != null)
+                    currentRatingsMap[place.id] = rating
+            }
+        }
+        // Add the place to the ClusterManager.
+        checkIfPlaceRatedByUser(
+            place.id!!,
+            auth.currentUser?.uid.toString()
+        ) { isRated ->
+            placeRatingMap[place.id] = isRated
+        }
+        clusterManager.addItem(place)
+        clusterManager.cluster()
+    }
+
+    private fun initializeClusterManager(googleMap: GoogleMap) {
+// Create the ClusterManager class and set the custom renderer.
+        clusterManager = ClusterManager<Place>(requireContext(), googleMap)
         clusterManager.renderer =
             PlaceRenderer(
                 requireContext(),
@@ -281,27 +384,30 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             MarkerInfoWindowAdapter(
                 requireContext(),
 //                markerRatingMap
-                placeRatingMap
+                placeRatingMap,
+                currentRatingsMap
             )
         )
         clusterManager.markerCollection.setOnInfoWindowClickListener {
             val place = it?.tag as? Place ?: return@setOnInfoWindowClickListener
             //Check if user has already rated this report
-            val isRated: Boolean = placeRatingMap[place] ?: false
+            val isRated: Boolean = placeRatingMap[place.id] ?: false
 
             if (isRated) {
-                markerRatingMap[it] = true
+//                markerRatingMap[it] = true
                 // The place has been rated by the user
                 // Do something
+                //TODO: Add snackbar that says place is already rated by you
             } else {
                 // The place has not been rated by the user
                 // Do something else
-                markerRatingMap[it] = false
+//                markerRatingMap[it] = false
                 val distance = calculateDistanceBetweenLatLng(place.latLng!!, lastLocation!!)
                 //Can rate places in radius of 3KM
-                if (distance < 3000)
+                if (distance < 3000) {
+                    it.hideInfoWindow()
                     showRateDialog(place)
-                else
+                } else
                     Toast.makeText(
                         context,
                         "You are too far to rate this report!",
@@ -311,29 +417,11 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             }
 
         }
-
-        // Add the places to the ClusterManager.
-        //TODO: Optimise this part, dont check for every place, check instead only for needed places
-        // or it will be optimised later when using GeoFire
-        placesList.forEach {
-            checkIfPlaceRatedByUser(
-                it.id!!,
-                auth.currentUser?.uid.toString()
-            ) { isRated ->
-//                markerRatingMap[it] = isRated
-                placeRatingMap[it] = isRated
-            }
-        }
-        clusterManager.addItems(placesList)
         clusterManager.cluster()
 
         // Set ClusterManager as the OnCameraIdleListener so that it
         // can re-cluster when zooming in and out.
         googleMap.setOnCameraIdleListener {
-            // When the camera stops moving, change the alpha value back to opaque.
-//            clusterManager.markerCollection.markers.forEach { it.alpha = 1.0f }
-//            clusterManager.clusterMarkerCollection.markers.forEach { it.alpha = 1.0f }
-
             // Call clusterManager.onCameraIdle() when the camera stops moving so that reclustering
             // can be performed when the camera stops moving.
             clusterManager.onCameraIdle()
@@ -351,6 +439,10 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
         location2.longitude = point2.longitude
 
         return location1.distanceTo(location2)
+    }
+
+    fun calculateDistanceBetweenLocations(point1: Location, point2: Location): Float {
+        return point1.distanceTo(point2)
     }
 
     private fun checkIfPlaceRatedByUser(
@@ -413,15 +505,12 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     }
 
     override fun onRatingSubmitted(placeId: String, rating: Int) {
-        // Handle the submitted rating here
-        // You can update the map or perform any other action based on the rating
         Toast.makeText(
             context,
             "Rating received %d back for place %s".format(rating, placeId),
             Toast.LENGTH_LONG
         ).show()
         updatePlaceRatingDb(placeId, rating)
-
     }
 
     private fun updatePlaceRatingDb(placeId: String, increment: Int) {
@@ -455,6 +544,9 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
                 Toast.LENGTH_LONG
             ).show()
 
+            //Adding to map so the view for user who rated can be updated immediately
+            placeRatingMap[placeId] = true
+
             if (userId != null && reportingUserId != null) {
                 val currentUserRef =
                     database.reference.child("users").child(userId)
@@ -481,8 +573,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
                     reportingUserRef.child("points").setValue(increasedPoints)
                 }
             }
-            //TODO: Update place rating on map
-//            var ratedPlace = findPlaceById(placeId)
         }.addOnFailureListener { e ->
             // Error occurred during the rating update
             // Handle the error here
@@ -492,38 +582,24 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
                 Toast.LENGTH_LONG
             ).show()
         }
-//        if (userId != null && reportingUserId != null) {
-//            val currentUserRef =
-//                database.reference.child("users").child(userId)
-//            val reportingUserRef =
-//                database.reference.child("users").child(reportingUserId!!)
-//
-//            currentUserRef.get().addOnSuccessListener { userDataSnapshot ->
-//                val currentPoints =
-//                    userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
-//                val increasedPoints = currentPoints + 10
-//                currentUserRef.child("points").setValue(increasedPoints)
-//                    .addOnSuccessListener {
-//                        Toast.makeText(
-//                            requireContext(),
-//                            "You just gained 10 pints for rating!",
-//                            Toast.LENGTH_SHORT
-//                        ).show()
-//                    }
-//            }
-//            reportingUserRef.get().addOnSuccessListener { userDataSnapshot ->
-//                val currentPoints =
-//                    userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
-//                val increasedPoints = currentPoints + 20
-//                reportingUserRef.child("points").setValue(increasedPoints)
-//            }
-//        }
+    }
 
+    fun convertGeoLocationToLocation(geoLocation: GeoLocation): Location {
+        val location = Location("GeoLocation")
+        location.latitude = geoLocation.latitude
+        location.longitude = geoLocation.longitude
+        return location
     }
 
     fun updateLocation(currentLocation: Location?) {
         val latLng = LatLng(currentLocation!!.latitude, currentLocation.longitude)
         lastLocation = latLng
+        //Update GeoQuery center only if there is at least 5 meters distance between new location and old query center
+        //TODO: Change minimum distance to 10m? So not every request changes query location
+        if (currentLocation.distanceTo(convertGeoLocationToLocation(geoQuery.center)) >= 5) {
+            val newQueryCenter = GeoLocation(currentLocation.latitude, currentLocation.longitude)
+            geoQuery.center = newQueryCenter
+        }
         val markerOptions = MarkerOptions().position(latLng).title("Vi ste ovde!").icon(gpsIcon)
             .anchor(0.5f, 0.5f) // Set the anchor point to the center of the marker icon
             .infoWindowAnchor(
@@ -541,6 +617,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             val cameraUpdate = CameraUpdateFactory.newLatLngZoom(latLng, zoomLevel)
             googleMap?.animateCamera(cameraUpdate)
         }
+
 //        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
     }
 

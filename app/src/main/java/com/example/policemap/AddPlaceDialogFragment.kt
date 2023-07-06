@@ -2,29 +2,32 @@ package com.example.policemap
 
 import android.app.Dialog
 import android.os.Bundle
-import android.telephony.PhoneNumberUtils
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
 import android.widget.*
 import androidx.fragment.app.DialogFragment
-import com.example.policemap.data.model.Place
 import com.example.policemap.data.model.PlaceDb
 import com.example.policemap.data.model.PlaceType
+import com.firebase.geofire.GeoFire
+import com.firebase.geofire.GeoLocation
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.Marker
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.wdullaer.materialdatetimepicker.date.DatePickerDialog
 import com.wdullaer.materialdatetimepicker.time.TimePickerDialog
 import java.text.SimpleDateFormat
 import java.util.*
 
-class AddPlaceDialogFragment : DialogFragment() {
+
+class AddPlaceDialogFragment(newMarker: Marker) : DialogFragment() {
     private lateinit var auth: FirebaseAuth
     private lateinit var editTextDateTime: EditText
     private lateinit var buttonAdd: Button
@@ -34,7 +37,9 @@ class AddPlaceDialogFragment : DialogFragment() {
         Firebase.database("https://police-map-22d2d-default-rtdb.europe-west1.firebasedatabase.app/")
     private var selectedDateTime: Calendar = Calendar.getInstance()
     private val db = FirebaseFirestore.getInstance()
-//        Firebase.fire("https://police-map-22d2d-default-rtdb.europe-west1.firebasedatabase.app/")
+    private var tempMarker: Marker = newMarker
+
+    private lateinit var geoFire: GeoFire
 
     /** The system calls this to get the DialogFragment's layout, regardless
     of whether it's being displayed as a dialog or an embedded fragment. */
@@ -62,6 +67,8 @@ class AddPlaceDialogFragment : DialogFragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         bindViews(view)
+        val ref = FirebaseDatabase.getInstance().getReference("geofire")
+        geoFire = GeoFire(ref)
     }
 
     private fun bindViews(view: View) {
@@ -111,6 +118,12 @@ class AddPlaceDialogFragment : DialogFragment() {
             placeRef.set(newPlace)
                 .addOnSuccessListener {
                     // Document was successfully written
+                    //Store location alose in GeoFire
+                    geoFire.setLocation(
+                        placeId,
+                        GeoLocation(location.latitude, location.longitude)
+                    )
+                    tempMarker.remove()
                     val usersWhoRatedRef =
                         placeRef.collection("usersWhoRated") // create a subcollection called "usersWhoRated"
                     usersWhoRatedRef.document(userId).set(mapOf("rated" to true))
@@ -143,6 +156,7 @@ class AddPlaceDialogFragment : DialogFragment() {
         }
         buttonDiscard.setOnClickListener {
             dismiss()
+            tempMarker.remove()
             //TODO: Add logic for canceling of addition and removing newMarker
         }
 
@@ -150,7 +164,22 @@ class AddPlaceDialogFragment : DialogFragment() {
             val selectedRadioButton = view.findViewById<RadioButton>(checkedId)
             selectedRadioButton?.let {
                 val selectedText = it.text.toString()
-                //TODO: Change newMarker icon on selected radio button change
+                tempMarker.setIcon(
+                    when (selectedText) {
+                        "Camera" -> {
+                            cameraIcon
+                        }
+                        "Patrol" -> {
+                            patrolIcon
+                        }
+                        "Control" -> {
+                            stopIcon
+                        }
+                        else -> {
+                            radarIcon
+                        }
+                    }
+                )
             }
         }
     }
@@ -188,5 +217,19 @@ class AddPlaceDialogFragment : DialogFragment() {
         )
 
         dpd.show(parentFragmentManager, "DatePickerDialog")
+    }
+
+    private val stopIcon: BitmapDescriptor by lazy {
+//        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_stop_48)
+    }
+    private val radarIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_radar_32)
+    }
+    private val cameraIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_camera_32)
+    }
+    private val patrolIcon: BitmapDescriptor by lazy {
+        BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_patrol_32)
     }
 }

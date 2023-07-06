@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import com.example.policemap.data.model.Place
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.Marker
@@ -17,8 +16,8 @@ import kotlin.collections.HashMap
 class MarkerInfoWindowAdapter(
     private val context: Context,
 //    private val ratedMap: HashMap<Marker, Boolean>
-    private val ratedMap: HashMap<Place, Boolean>
-
+    private val ratedMap: HashMap<String, Boolean>,
+    private val currentRatingsMap: HashMap<String, Int>
 ) : GoogleMap.InfoWindowAdapter {
     private val db = FirebaseFirestore.getInstance()
 
@@ -56,11 +55,13 @@ class MarkerInfoWindowAdapter(
         view.findViewById<TextView>(
             R.id.text_view_address
         ).text = dateOutput
+
         view.findViewById<TextView>(
             R.id.text_view_rating
-        ).text = " %d ".format(place.rating)
+        ).text = " %d ".format(currentRatingsMap[place.id] ?: place.rating)
 
-        val hasRated = ratedMap[place] ?: false
+
+        val hasRated = ratedMap[place.id] ?: false
         if (hasRated) {
             val rateButton = view.findViewById<Button>(R.id.rateButton)
             rateButton.text = "Rated!"
