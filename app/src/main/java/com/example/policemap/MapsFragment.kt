@@ -53,8 +53,9 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     private var addingPlace: Boolean = false
     private var newMarker: Marker? = null
 
-    private var fabFollow: FloatingActionButton? = null
+    private lateinit var fabFollow: FloatingActionButton
     private lateinit var fabAdd: FloatingActionButton
+    private lateinit var fabLeaderboard: FloatingActionButton
     private val callback = OnMapReadyCallback { googleMap ->
         /**
          * Manipulates the map once available.
@@ -141,15 +142,28 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 
         fabFollow = view.findViewById(R.id.fabFollow)
         fabAdd = view.findViewById(R.id.fabAdd)
+        fabLeaderboard = view.findViewById(R.id.fabLeaderboard)
         fabFollow?.setOnClickListener {
             setFollow(!follow)
         }
         fabAdd.setOnClickListener {
             onAddPlace()
         }
+        fabLeaderboard.setOnClickListener {
+            onShowLeaderboard()
+        }
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
+    }
+
+    private fun onShowLeaderboard() {
+        val userListFragment =
+            UserListFragment.newInstance() // Replace 'columnCount' with your desired column count
+        parentFragmentManager.beginTransaction()
+            .add(R.id.fragment_container, userListFragment)
+            .addToBackStack(null)
+            .commit()
     }
 
     private fun setFollow(newValue: Boolean) {
