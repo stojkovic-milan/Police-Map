@@ -140,76 +140,118 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         val queryCenter = GeoLocation(lastLocation?.latitude ?: 0.0, lastLocation?.longitude ?: 0.0)
         val queryRadius = filterOptions.radius / 1000.0F // in kilometers
         geoQuery = geoFire.queryAtLocation(queryCenter, queryRadius.toDouble())
-        var keyList: MutableList<String> = mutableListOf()
 
-        geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
-            override fun onKeyEntered(key: String?, location: GeoLocation?) {
-                // Key entered the query area, display the place on the map
-                if (key != null && location != null) {
-                    val placeLatitude = location.latitude
-                    val placeLongitude = location.longitude
-                    // Display the place using its key, latitude, and longitude
-                    //TODO:Filtering here on query instead of locally
+        initializeGeoQuery()
+//        geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
+//            override fun onKeyEntered(key: String?, location: GeoLocation?) {
+//                // Key entered the query area, display the place on the map
+//                if (key != null && location != null) {
+//                    val placeLatitude = location.latitude
+//                    val placeLongitude = location.longitude
+//                    // Display the place using its key, latitude, and longitude
+//                    //TODO:Filtering here on query instead of locally
 //                    val placesCollection = db.collection("places")
-//                    var query: Query? = null
-//                    if (!filterOptions.showExpired)
-//                        query = placesCollection.whereGreaterThan("expirationTime", Date())
-//                    if (!filterOptions.showMineOnly)
-//                        (query ?: placesCollection).whereEqualTo(
-//                            "userId",
-//                            auth.currentUser?.uid.toString()
-//                        )
-
-                    val placeRef = db.collection("places").document(key)
-                    placeRef.get().addOnSuccessListener {
-                        val placeDb = it.toObject(PlaceDb::class.java)
-                        //TODO: Move expirationTime filtering elsewhere
-                        if (placeDb!!.expirationTime!!.before(Date()))
-                            return@addOnSuccessListener
-                        keyList.add(key)
-                        val place = Place(
-                            placeDb.id,
-                            LatLng(placeDb.lat!!, placeDb.lng!!),
-                            placeDb.time,
-                            placeDb.rating,
-                            placeDb.placeType,
-                            placeDb.userId,
-                            placeDb.expirationTime,
-                        )
-                        placesOnMap[key] = place
-                        addClusteredMarker(place)
-                    }
-                        .addOnFailureListener { e ->
-                            // Handle any errors that occurred during the retrieval
-                            // ...
-                        }
-                }
-            }
-
-            override fun onKeyExited(key: String?) {
-                // Key exited the query area, remove the place from the map or list view
-                keyList.remove(key)
-                var placeLeft = placesOnMap[key]
-                if (placeLeft != null) {
-                    clusterManager.removeItem(placeLeft)
-                    placesOnMap.remove(key)
-                    clusterManager.cluster()
-                }
-
-            }
-
-            override fun onKeyMoved(key: String?, location: GeoLocation?) {
-                // Key moved within the query area, update the place's position on the map or list view
-            }
-
-            override fun onGeoQueryReady() {
-                // All initial place data has been loaded, do any final processing or UI updates
-            }
-
-            override fun onGeoQueryError(error: DatabaseError?) {
-                // Handle any errors that occurred during the query
-            }
-        })
+//                    var query: Query? = placesCollection.whereEqualTo("id", key)
+//
+//                    if (!filterOptions.showExpired) {
+//                        query = query?.also { query ->
+//                            query.whereGreaterThan(
+//                                "expirationTime",
+//                                Date()
+//                            )
+//                        }
+//                    }
+//
+//                    if (filterOptions.showMineOnly) {
+//                        query = query?.also { query ->
+//                            query?.whereEqualTo(
+//                                "userId",
+//                                auth.currentUser?.uid.toString()
+//                            )
+//                        }
+//                    }
+//
+//                    val wantedTypesString: MutableList<String> = mutableListOf()
+//
+//                    if (filterOptions.cameraOption) {
+//                        wantedTypesString.add("Camera")
+//                    }
+//
+//                    if (filterOptions.controlOption) {
+//                        wantedTypesString.add("Control")
+//                    }
+//
+//                    if (filterOptions.radarOption) {
+//                        wantedTypesString.add("Radar")
+//                    }
+//
+//                    if (filterOptions.patrolOption) {
+//                        wantedTypesString.add("Patrol")
+//                    }
+//
+//                    if (wantedTypesString.isNotEmpty()) {
+//                        query =
+//                            query.also { query -> query?.whereIn("placeType", wantedTypesString) }
+//                    }
+//
+//                    query?.get()?.addOnSuccessListener { querySnapshot ->
+//                        for (documentSnapshot in querySnapshot.documents) {
+//                            val placeDb = documentSnapshot.toObject(PlaceDb::class.java)
+//                            if (placeDb != null) {
+////                                val expirationTime = placeDb.expirationTime
+////                                if (expirationTime != null && expirationTime.before(Date())) {
+////                                    // Place has expired, skip further processing
+////                                    continue
+////                                }
+//
+//                                // Place is valid, continue processing
+//                                keyList.add(key)
+//                                val place = Place(
+//                                    placeDb.id,
+//                                    LatLng(placeDb.lat!!, placeDb.lng!!),
+//                                    placeDb.time,
+//                                    placeDb.rating,
+//                                    placeDb.placeType,
+//                                    placeDb.userId,
+//                                    placeDb.expirationTime
+//                                )
+//                                placesOnMap[key] = place
+//                                addClusteredMarker(place)
+//                            }
+//                        }
+//                    }
+//                        ?.addOnFailureListener { exception ->
+//                            // Handle any errors that occurred during the retrieval
+//                            // ...
+//                        }
+//
+//                }
+//            }
+//
+//            override fun onKeyExited(key: String?) {
+//                // Key exited the query area, remove the place from the map or list view
+//                keyList.remove(key)
+//                var placeLeft = placesOnMap[key]
+//                if (placeLeft != null) {
+//                    clusterManager.removeItem(placeLeft)
+//                    placesOnMap.remove(key)
+//                    clusterManager.cluster()
+//                }
+//
+//            }
+//
+//            override fun onKeyMoved(key: String?, location: GeoLocation?) {
+//                // Key moved within the query area, update the place's position on the map or list view
+//            }
+//
+//            override fun onGeoQueryReady() {
+//                // All initial place data has been loaded, do any final processing or UI updates
+//            }
+//
+//            override fun onGeoQueryError(error: DatabaseError?) {
+//                // Handle any errors that occurred during the query
+//            }
+//        })
 
 //        initializeClusterManager()
 
@@ -262,6 +304,99 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
+    }
+
+    private fun initializeGeoQuery() {
+        var keyList: MutableList<String> = mutableListOf()
+        geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
+            override fun onKeyEntered(key: String?, location: GeoLocation?) {
+                // Key entered the query area, display the place on the map
+                if (key != null && location != null) {
+                    val placeLatitude = location.latitude
+                    val placeLongitude = location.longitude
+                    val placesCollection = db.collection("places")
+                    var query: Query? = placesCollection.whereEqualTo("id", key)
+
+                    if (!filterOptions.showExpired) {
+                        query = query?.whereGreaterThan("expirationTime", Date())
+                    }
+
+                    if (filterOptions.showMineOnly) {
+                        query = query?.whereEqualTo("userId", auth.currentUser?.uid.toString())
+                    }
+
+                    val wantedTypesString: MutableList<String> = mutableListOf()
+
+                    if (filterOptions.cameraOption) {
+                        wantedTypesString.add("Camera")
+                    }
+
+                    if (filterOptions.controlOption) {
+                        wantedTypesString.add("Control")
+                    }
+
+                    if (filterOptions.radarOption) {
+                        wantedTypesString.add("Radar")
+                    }
+
+                    if (filterOptions.patrolOption) {
+                        wantedTypesString.add("Patrol")
+                    }
+
+                    query = query?.whereIn("placeType", wantedTypesString)
+
+
+                    query?.get()?.addOnSuccessListener { querySnapshot ->
+                        for (documentSnapshot in querySnapshot.documents) {
+                            val placeDb = documentSnapshot.toObject(PlaceDb::class.java)
+                            if (placeDb != null) {
+                                keyList.add(key)
+                                val place = Place(
+                                    placeDb.id,
+                                    LatLng(placeDb.lat!!, placeDb.lng!!),
+                                    placeDb.time,
+                                    placeDb.rating,
+                                    placeDb.placeType,
+                                    placeDb.userId,
+                                    placeDb.expirationTime
+                                )
+                                placesOnMap[key] = place
+                                addClusteredMarker(place)
+                            }
+                        }
+                    }
+                        ?.addOnFailureListener { exception ->
+                            // Handle any errors that occurred during the retrieval
+                            // ...
+                        }
+
+                }
+            }
+
+            override fun onKeyExited(key: String?) {
+                // Key exited the query area, remove the place from the map or list view
+                keyList.remove(key)
+                var placeLeft = placesOnMap[key]
+                if (placeLeft != null) {
+                    clusterManager.removeItem(placeLeft)
+                    placesOnMap.remove(key)
+                    clusterManager.cluster()
+                }
+
+            }
+
+            override fun onKeyMoved(key: String?, location: GeoLocation?) {
+                // Key moved within the query area, update the place's position on the map or list view
+            }
+
+            override fun onGeoQueryReady() {
+                // All initial place data has been loaded, do any final processing or UI updates
+            }
+
+            override fun onGeoQueryError(error: DatabaseError?) {
+                // Handle any errors that occurred during the query
+            }
+        })
     }
 
     private fun onShowLeaderboard() {
@@ -657,7 +792,16 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
     }
 
     private fun showFilterDrawer() {
-        val filterDrawerFragment = MapFilterDrawerFragment()
+        val filterDrawerFragment =
+            MapFilterDrawerFragment(
+                camera = filterOptions.cameraOption,
+                radar = filterOptions.radarOption,
+                control = filterOptions.controlOption,
+                patrol = filterOptions.patrolOption,
+                radius = filterOptions.radius,
+                expired = filterOptions.showExpired,
+                mineOnly = filterOptions.showMineOnly
+            )
         filterDrawerFragment.setRatingDialogCallback(this)
         filterDrawerFragment.show(parentFragmentManager, "FilterDrawerFragment")
     }
@@ -681,6 +825,16 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             radius
         )
         geoQuery.radius = (radius / 1000F).toDouble()
+        geoQuery.removeAllListeners()
+        clusterManager.removeItems(placesOnMap.values)
+        clusterManager.cluster()
+        //Clearing current maps
+        //Test?
+        placesOnMap.clear()
+        placeRatingMap.clear()
+        currentRatingsMap.clear()
+        //
+        initializeGeoQuery()
     }
 
     private val stopIcon: BitmapDescriptor by lazy {

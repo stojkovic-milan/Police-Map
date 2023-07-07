@@ -34,7 +34,7 @@ class MarkerInfoWindowAdapter(
         view.findViewById<TextView>(
             R.id.text_view_title
         ).text = place.placeType.toString()
-        val pattern = "HH:mm:ss"
+        val pattern = "HH:mm:ss dd.MM.yyyy"
         val simpleDateFormat = SimpleDateFormat(pattern)
 
         val diff: Long = Date().time - place.time!!.time

@@ -12,8 +12,18 @@ import android.widget.ToggleButton
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.slider.Slider
+import kotlin.math.min
 
-class MapFilterDrawerFragment : DialogFragment() {
+class MapFilterDrawerFragment(
+    private val camera: Boolean,
+    private val radar: Boolean,
+    private val control: Boolean,
+    private val patrol: Boolean,
+    private val radius: Float,
+    private val expired: Boolean,
+    private val mineOnly: Boolean
+) :
+    DialogFragment() {
 
     private lateinit var cameraToggle: ToggleButton
     private lateinit var radarToggle: ToggleButton
@@ -25,6 +35,12 @@ class MapFilterDrawerFragment : DialogFragment() {
     private lateinit var applyButton: Button
     private lateinit var clearButton: Button
     private var filterCallback: FilterDrawerListener? = null
+
+//    private val cameraInit: Boolean = camera
+//    private val radarInit: Boolean = radar
+//    private val controlInit: Boolean = control
+//    private val patrolInit: Boolean = patrol
+//    private val radiusInit: Float = radius
 
     interface FilterDrawerListener {
         fun onFilterApplied(
@@ -62,6 +78,15 @@ class MapFilterDrawerFragment : DialogFragment() {
         toolbar.setNavigationOnClickListener {
             dismiss()
         }
+
+        cameraToggle.isChecked = camera
+        radarToggle.isChecked = radar
+        patrolToggle.isChecked = patrol
+        controlToggle.isChecked = control
+        radiusSlider.value = radius
+        mineOnlyCheckBox.isChecked = mineOnly
+        expiredCheckBox.isChecked = expired
+
         applyButton.setOnClickListener {
 
 //            val listener = activity as? FilterDrawerListener
