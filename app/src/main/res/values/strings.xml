@@ -86,4 +86,7 @@
     <string name="profile_picture">Profile picture</string>
     <string name="users_leaderboard">Users Leaderboard</string>
     <string name="leaderboard">Leaderboard</string>
+    <string name="filter_reports">Filter reports</string>
+    <string name="option_on">ON</string>
+    <string name="option_off">OFF</string>
 </resources>

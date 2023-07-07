@@ -1,0 +1,183 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- Drawer header -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/purple_500"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
+        android:titleTextColor="@color/white"
+        app:contentInsetLeft="0dp"
+        app:contentInsetStart="0dp"
+        app:navigationIcon="@drawable/baseline_arrow_forward_32"
+        app:title="@string/filter_reports" />
+
+    <!-- Report types -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:text="Report Types"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textStyle="bold" />
+
+    <GridLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="5dp"
+        android:columnCount="2"
+        android:rowCount="2">
+
+        <ToggleButton
+            android:id="@+id/filter_camera"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_margin="8dp"
+            android:background="@drawable/toggle_button_bg"
+            android:checked="true"
+            android:drawableStart="@drawable/camera_64"
+            android:padding="16dp"
+            android:text="Camera"
+            android:textColor="@color/white"
+            android:textOff="Camera"
+            android:textOn="Camera"
+            android:textSize="16dp" />
+
+        <ToggleButton
+            android:id="@+id/filter_control"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_margin="8dp"
+            android:background="@drawable/toggle_button_bg"
+            android:checked="true"
+            android:drawableStart="@drawable/police_stop_64"
+            android:padding="16dp"
+            android:text="Control"
+            android:textColor="@color/white"
+            android:textOff="Control"
+            android:textOn="Control"
+            android:textSize="16dp" />
+
+        <ToggleButton
+            android:id="@+id/filter_radar"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_margin="8dp"
+            android:background="@drawable/toggle_button_bg"
+            android:checked="true"
+            android:drawableStart="@drawable/radar_64"
+            android:padding="16dp"
+            android:text="Radar"
+            android:textColor="@color/white"
+            android:textOff="Radar"
+            android:textOn="Radar"
+            android:textSize="16dp" />
+
+        <ToggleButton
+            android:id="@+id/filter_patrol"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_rowWeight="1"
+            android:layout_columnWeight="1"
+            android:layout_margin="8dp"
+            android:background="@drawable/toggle_button_bg"
+            android:checked="true"
+            android:drawableStart="@drawable/patrol"
+            android:padding="16dp"
+            android:text="Patrol"
+            android:textColor="@color/white"
+            android:textOff="Patrol"
+            android:textOn="Patrol"
+            android:textSize="16dp" />
+
+    </GridLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingLeft="16dp"
+        android:paddingTop="16dp"
+        android:text="Select Radius (meters)"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textStyle="bold" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/radius_slider"
+        style="@style/SliderCustomStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginEnd="16dp"
+        android:backgroundTint="@color/purple_700"
+        android:value="2500"
+        android:valueFrom="10"
+        android:valueTo="5000"
+        app:trackColor="@color/purple_700" />
+
+    <CheckBox
+        android:id="@+id/expired_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:scaleX="1.1"
+        android:scaleY="1.1"
+        android:text="Show Expired"
+        android:textSize="18sp" />
+
+    <CheckBox
+        android:id="@+id/mine_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:scaleX="1.1"
+        android:scaleY="1.1"
+        android:text="Show only my reports"
+        android:textSize="18sp" />
+    <!-- Buttons layout -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- Clear button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clear_button"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:padding="16dp"
+            android:text="Clear"
+            android:textColor="@color/purple_700"
+            app:backgroundTint="@color/white" />
+
+        <Space
+            android:layout_width="16dp"
+            android:layout_height="match_parent" />
+        <!-- Apply button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/apply_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:layout_weight="1"
+            android:padding="16dp"
+            android:text="Apply"
+            app:backgroundTint="@color/purple_700" />
+
+    </LinearLayout>
+
+</LinearLayout>

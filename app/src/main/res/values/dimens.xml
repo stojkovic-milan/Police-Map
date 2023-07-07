@@ -4,4 +4,6 @@
     <dimen name="activity_vertical_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="text_margin">16dp</dimen>
+    <dimen name="dialog_min_width_major">300dp</dimen>
+    <dimen name="dialog_min_width_minor">280dp</dimen>
 </resources>

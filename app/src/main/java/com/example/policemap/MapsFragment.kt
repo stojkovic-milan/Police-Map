@@ -31,12 +31,15 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ktx.database
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.ktx.Firebase
 import com.google.maps.android.clustering.ClusterManager
 import java.util.*
+import kotlin.collections.HashMap
 
 
-class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
+class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
+    MapFilterDrawerFragment.FilterDrawerListener {
     private val db = FirebaseFirestore.getInstance()
     private val placesList = mutableListOf<Place>()
     private lateinit var auth: FirebaseAuth
@@ -44,6 +47,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     //    private val markerRatingMap = HashMap<Marker, Boolean>()
     private val placeRatingMap = HashMap<String, Boolean>()
     private val currentRatingsMap = HashMap<String, Int>()
+    private val placesOnMap = HashMap<String, Place>()
     private lateinit var geoFire: GeoFire
     private lateinit var geoQuery: GeoQuery
     private lateinit var clusterManager: ClusterManager<Place>
@@ -64,9 +68,12 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
     private var addingPlace: Boolean = false
     private var newMarker: Marker? = null
 
+    private lateinit var filterOptions: FilterOptions
+
     private lateinit var fabFollow: FloatingActionButton
     private lateinit var fabAdd: FloatingActionButton
     private lateinit var fabLeaderboard: FloatingActionButton
+    private lateinit var fabFilter: FloatingActionButton
     private val callback = OnMapReadyCallback { googleMap ->
         /**
          * Manipulates the map once available.
@@ -121,27 +128,45 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        filterOptions = FilterOptions(
+            cameraOption = true, radarOption = true, controlOption = true, patrolOption = true,
+            showExpired = false,
+            showMineOnly = false,
+            radius = 2500F
+        )
         auth = FirebaseAuth.getInstance()
         val ref = FirebaseDatabase.getInstance().getReference("geofire")
         geoFire = GeoFire(ref)
         val queryCenter = GeoLocation(lastLocation?.latitude ?: 0.0, lastLocation?.longitude ?: 0.0)
-        val queryRadius = 1.0 // in kilometers
-        geoQuery = geoFire.queryAtLocation(queryCenter, queryRadius)
+        val queryRadius = filterOptions.radius / 1000.0F // in kilometers
+        geoQuery = geoFire.queryAtLocation(queryCenter, queryRadius.toDouble())
         var keyList: MutableList<String> = mutableListOf()
 
         geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
             override fun onKeyEntered(key: String?, location: GeoLocation?) {
-                // Key entered the query area, display the place on the map or list view
+                // Key entered the query area, display the place on the map
                 if (key != null && location != null) {
                     val placeLatitude = location.latitude
                     val placeLongitude = location.longitude
                     // Display the place using its key, latitude, and longitude
-                    keyList.add(key)
+                    //TODO:Filtering here on query instead of locally
+//                    val placesCollection = db.collection("places")
+//                    var query: Query? = null
+//                    if (!filterOptions.showExpired)
+//                        query = placesCollection.whereGreaterThan("expirationTime", Date())
+//                    if (!filterOptions.showMineOnly)
+//                        (query ?: placesCollection).whereEqualTo(
+//                            "userId",
+//                            auth.currentUser?.uid.toString()
+//                        )
+
                     val placeRef = db.collection("places").document(key)
                     placeRef.get().addOnSuccessListener {
                         val placeDb = it.toObject(PlaceDb::class.java)
+                        //TODO: Move expirationTime filtering elsewhere
                         if (placeDb!!.expirationTime!!.before(Date()))
                             return@addOnSuccessListener
+                        keyList.add(key)
                         val place = Place(
                             placeDb.id,
                             LatLng(placeDb.lat!!, placeDb.lng!!),
@@ -151,8 +176,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
                             placeDb.userId,
                             placeDb.expirationTime,
                         )
-                        // Add the place to the list
-//                        placesList.add(place)
+                        placesOnMap[key] = place
                         addClusteredMarker(place)
                     }
                         .addOnFailureListener { e ->
@@ -165,6 +189,12 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
             override fun onKeyExited(key: String?) {
                 // Key exited the query area, remove the place from the map or list view
                 keyList.remove(key)
+                var placeLeft = placesOnMap[key]
+                if (placeLeft != null) {
+                    clusterManager.removeItem(placeLeft)
+                    placesOnMap.remove(key)
+                    clusterManager.cluster()
+                }
 
             }
 
@@ -215,6 +245,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
         fabFollow = view.findViewById(R.id.fabFollow)
         fabAdd = view.findViewById(R.id.fabAdd)
         fabLeaderboard = view.findViewById(R.id.fabLeaderboard)
+        fabFilter = view.findViewById(R.id.fabMapFilter)
         fabFollow?.setOnClickListener {
             setFollow(!follow)
         }
@@ -224,6 +255,10 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
         fabLeaderboard.setOnClickListener {
             onShowLeaderboard()
         }
+        fabFilter.setOnClickListener {
+            showFilterDrawer()
+        }
+
         val mapFragment =
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
@@ -619,6 +654,33 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback {
         }
 
 //        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+    }
+
+    private fun showFilterDrawer() {
+        val filterDrawerFragment = MapFilterDrawerFragment()
+        filterDrawerFragment.setRatingDialogCallback(this)
+        filterDrawerFragment.show(parentFragmentManager, "FilterDrawerFragment")
+    }
+
+    override fun onFilterApplied(
+        cameraOption: Boolean,
+        radarOption: Boolean,
+        controlOption: Boolean,
+        patrolOption: Boolean,
+        radius: Float,
+        showExpired: Boolean,
+        showMineOnly: Boolean
+    ) {
+        filterOptions = FilterOptions(
+            cameraOption,
+            radarOption,
+            controlOption,
+            patrolOption,
+            showExpired,
+            showMineOnly,
+            radius
+        )
+        geoQuery.radius = (radius / 1000F).toDouble()
     }
 
     private val stopIcon: BitmapDescriptor by lazy {
