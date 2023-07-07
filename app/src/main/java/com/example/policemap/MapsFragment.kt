@@ -74,6 +74,8 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
     private lateinit var fabAdd: FloatingActionButton
     private lateinit var fabLeaderboard: FloatingActionButton
     private lateinit var fabFilter: FloatingActionButton
+    private lateinit var fabPlacesList: FloatingActionButton
+
     private val callback = OnMapReadyCallback { googleMap ->
         /**
          * Manipulates the map once available.
@@ -288,6 +290,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         fabAdd = view.findViewById(R.id.fabAdd)
         fabLeaderboard = view.findViewById(R.id.fabLeaderboard)
         fabFilter = view.findViewById(R.id.fabMapFilter)
+        fabPlacesList = view.findViewById(R.id.fabPlacesList)
         fabFollow?.setOnClickListener {
             setFollow(!follow)
         }
@@ -297,6 +300,9 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         fabLeaderboard.setOnClickListener {
             onShowLeaderboard()
         }
+        fabPlacesList.setOnClickListener {
+            onShowPlacesList()
+        }
         fabFilter.setOnClickListener {
             showFilterDrawer()
         }
@@ -305,6 +311,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             childFragmentManager.findFragmentById(R.id.map) as SupportMapFragment?
         mapFragment?.getMapAsync(callback)
     }
+
 
     private fun initializeGeoQuery() {
         var keyList: MutableList<String> = mutableListOf()
@@ -401,9 +408,18 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
 
     private fun onShowLeaderboard() {
         val userListFragment =
-            UserListFragment.newInstance() // Replace 'columnCount' with your desired column count
+            UserListFragment.newInstance()
         parentFragmentManager.beginTransaction()
             .add(R.id.fragment_container, userListFragment)
+            .addToBackStack(null)
+            .commit()
+    }
+
+    private fun onShowPlacesList() {
+        val placesListFragment =
+            PlaceListFragment.newInstance()
+        parentFragmentManager.beginTransaction()
+            .add(R.id.fragment_container, placesListFragment)
             .addToBackStack(null)
             .commit()
     }

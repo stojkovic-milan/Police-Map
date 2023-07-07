@@ -48,4 +48,15 @@
         android:padding="0dp"
         app:srcCompat="@drawable/filter"
         app:tint="@null" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabPlacesList"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|left"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:padding="0dp"
+        app:srcCompat="@drawable/list_512"
+        app:tint="@null" />
 </fragment>

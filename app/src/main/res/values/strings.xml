@@ -89,4 +89,5 @@
     <string name="filter_reports">Filter reports</string>
     <string name="option_on">ON</string>
     <string name="option_off">OFF</string>
+    <string name="places">Places</string>
 </resources>
