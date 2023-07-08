@@ -90,4 +90,6 @@
     <string name="option_on">ON</string>
     <string name="option_off">OFF</string>
     <string name="places">Places</string>
+    <string name="reports">Reports</string>
+    <string name="expired">Expired</string>
 </resources>
