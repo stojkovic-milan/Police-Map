@@ -472,7 +472,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
                 "Drag marker to accurate location of report!",
                 Snackbar.LENGTH_LONG
             )
-                .setAnchorView(R.id.fab)
+                .setAnchorView(R.id.fabAdd)
                 .setAction("Action", null).show()
 
             newMarker = googleMap?.addMarker(markerOptions)
