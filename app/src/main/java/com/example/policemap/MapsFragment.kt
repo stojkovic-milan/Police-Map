@@ -26,6 +26,7 @@ import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -325,7 +326,8 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
                     var query: Query? = placesCollection.whereEqualTo("id", key)
 
                     if (!filterOptions.showExpired) {
-                        query = query?.whereGreaterThan("expirationTime", Date())
+                        val currentTimestamp = Timestamp.now()
+                        query = query?.whereGreaterThan("expirationTime", currentTimestamp)
                     }
 
                     if (filterOptions.showMineOnly) {

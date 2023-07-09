@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.example.policemap.data.model.User
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.database.*
 
 /**
@@ -23,6 +24,14 @@ class UserListFragment : Fragment() {
         super.onCreate(savedInstanceState)
 
         databaseRef = FirebaseDatabase.getInstance().getReference("users")
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.setNavigationOnClickListener {
+            parentFragmentManager.beginTransaction().remove(this).commit()
+        }
     }
 
     override fun onCreateView(

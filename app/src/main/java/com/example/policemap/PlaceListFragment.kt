@@ -8,11 +8,13 @@ import androidx.recyclerview.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import com.example.policemap.data.model.Place
 import com.example.policemap.data.model.PlaceDb
 import com.example.policemap.data.model.User
 import com.example.policemap.placeholder.PlaceholderContent
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.database.*
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.FirebaseFirestore
@@ -48,6 +50,14 @@ class PlaceListFragment : Fragment() {
         recyclerView.adapter = placeAdapter
 
         return view
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.setNavigationOnClickListener {
+            parentFragmentManager.beginTransaction().remove(this).commit()
+        }
     }
 
     override fun onStart() {

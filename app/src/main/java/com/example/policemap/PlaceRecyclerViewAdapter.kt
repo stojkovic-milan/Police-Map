@@ -51,6 +51,8 @@ class PlaceRecyclerViewAdapter(
         if (item.expirationTime!! < Date()) {
             expired = true
             holder.expiredChip.visibility = View.VISIBLE
+        } else {
+            holder.expiredChip.visibility = View.GONE
         }
         holder.expirationView.text =
             (if (expired) "Expired: %s" else "Expires: %s").format(simpleDateFormat.format((item.expirationTime)))
