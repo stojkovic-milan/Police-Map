@@ -157,7 +157,6 @@ class AddPlaceDialogFragment(newMarker: Marker) : DialogFragment() {
         buttonDiscard.setOnClickListener {
             dismiss()
             tempMarker.remove()
-            //TODO: Add logic for canceling of addition and removing newMarker
         }
 
         typeRadioGroup.setOnCheckedChangeListener { radioGroup, checkedId ->

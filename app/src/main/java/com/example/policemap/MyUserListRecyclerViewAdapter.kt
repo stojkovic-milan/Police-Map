@@ -15,7 +15,6 @@ import com.example.policemap.databinding.FragmentUserListBinding
 
 /**
  * [RecyclerView.Adapter] that can display a [User].
- * TODO: Replace the implementation with code for your data type.
  */
 class MyUserListRecyclerViewAdapter(
     private val values: MutableList<User>

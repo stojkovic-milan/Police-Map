@@ -20,8 +20,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * [RecyclerView.Adapter] that can display a [PlaceholderItem].
- * TODO: Replace the implementation with code for your data type.
+ * [RecyclerView.Adapter] that can display a [Place].
  */
 class PlaceRecyclerViewAdapter(
     private val values: List<Place>

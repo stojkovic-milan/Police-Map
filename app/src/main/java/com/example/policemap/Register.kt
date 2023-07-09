@@ -44,9 +44,8 @@ class Register : AppCompatActivity() {
         // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if (currentUser != null) {
-//TODO: DONE?? Add main activity and uncoment after adding
-//          var intent = Intent(baseContext, MainActivity::class.java)
-//          startActivity(intent)
+            var intent = Intent(baseContext, MainActivity::class.java)
+            startActivity(intent)
         }
     }
 

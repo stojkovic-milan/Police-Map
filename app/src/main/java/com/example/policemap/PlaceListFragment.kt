@@ -102,7 +102,6 @@ class PlaceListFragment : Fragment(), MapFilterDrawerFragment.FilterDrawerListen
             }
 
             override fun onNothingSelected(p0: AdapterView<*>?) {
-//                TODO("Not yet implemented")
             }
         }
     }
