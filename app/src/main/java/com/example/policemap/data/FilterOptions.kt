@@ -1,4 +1,4 @@
-package com.example.policemap
+package com.example.policemap.data
 
 data class FilterOptions(
     val cameraOption: Boolean,

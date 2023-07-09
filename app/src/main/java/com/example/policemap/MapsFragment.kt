@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentTransaction
+import com.example.policemap.data.FilterOptions
 import com.example.policemap.data.model.Place
 import com.example.policemap.data.model.PlaceDb
 import com.example.policemap.data.model.PlaceType
