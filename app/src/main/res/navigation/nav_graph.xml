@@ -28,7 +28,7 @@
     <fragment
         android:id="@+id/MainFragment"
         android:name="com.example.policemap.MainFragment"
-        android:label="@string/MainFragmentLabel"
+        android:label="Police Map"
         tools:layout="@layout/fragment_main">
 
         <!--        <action-->

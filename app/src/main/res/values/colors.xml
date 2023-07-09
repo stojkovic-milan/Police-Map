@@ -10,4 +10,8 @@
     <color name="gold">#FFDF00</color>
     <color name="silver">#C0C0C0</color>
     <color name="bronze">#CD7F32</color>
+    <color name="secondary">#febd01</color>
+    <color name="primary">#4c9cd8</color>
+    <color name="primary_dark">#2c68a3</color>
+    <color name="primary_alt">#0080ff</color>
 </resources>

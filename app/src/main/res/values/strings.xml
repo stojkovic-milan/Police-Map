@@ -92,4 +92,5 @@
     <string name="places">Places</string>
     <string name="reports">Reports</string>
     <string name="expired">Expired</string>
+    <string name="sign_in">Sign in</string>
 </resources>
