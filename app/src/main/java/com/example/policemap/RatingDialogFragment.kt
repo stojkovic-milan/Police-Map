@@ -21,14 +21,6 @@ class RatingDialogFragment : DialogFragment() {
 
     private var ratingCallback: RatingDialogCallback? = null
 
-    //
-//    override fun onAttach(context: Context) {
-//        super.onAttach(context)
-//        // Ensure that the host activity implements the RatingChangeListener interface
-//        if (context is RatingChangeListener) {
-//            ratingChangeListener = context
-//        }
-//    }
     fun setRatingDialogCallback(callback: RatingDialogCallback) {
         this.ratingCallback = callback
     }
@@ -77,8 +69,6 @@ class RatingDialogFragment : DialogFragment() {
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-//        val inflater = LayoutInflater.from(requireContext())
-//        val dialogView = inflater.inflate(R.layout.fragment_rating_dialog, null)
         val dialog = Dialog(requireContext(), R.style.FloatingDialogTheme)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         return dialog

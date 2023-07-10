@@ -15,7 +15,6 @@ import kotlin.collections.HashMap
 
 class MarkerInfoWindowAdapter(
     private val context: Context,
-//    private val ratedMap: HashMap<Marker, Boolean>
     private val ratedMap: HashMap<String, Boolean>,
     private val currentRatingsMap: HashMap<String, Int>
 ) : GoogleMap.InfoWindowAdapter {

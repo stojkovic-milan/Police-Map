@@ -103,18 +103,6 @@ class MainFragment : Fragment() {
     }
 
     private fun loadProfileImage() {
-//        storageRef.downloadUrl.addOnSuccessListener { uri ->
-//            val imageUrl = uri.toString()
-//
-//            // Use Glide to load the image into the ImageView
-//            Glide.with(this)
-//                .load(imageUrl)
-//                .apply(RequestOptions().transform(CenterCrop()))
-//                .into(profileImage)
-//        }.addOnFailureListener { exception ->
-//            // Handle any errors that occurred while retrieving the download URL
-//        }
-        // Use Glide to load the image into the ImageView
         Glide.with(this)
             .load(auth.currentUser!!.photoUrl)
             .apply(RequestOptions().transform(CenterCrop()))

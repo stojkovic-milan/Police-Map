@@ -36,11 +36,6 @@ class MapFilterDrawerFragment(
     private lateinit var clearButton: Button
     private var filterCallback: FilterDrawerListener? = null
 
-//    private val cameraInit: Boolean = camera
-//    private val radarInit: Boolean = radar
-//    private val controlInit: Boolean = control
-//    private val patrolInit: Boolean = patrol
-//    private val radiusInit: Float = radius
 
     interface FilterDrawerListener {
         fun onFilterApplied(
@@ -71,7 +66,6 @@ class MapFilterDrawerFragment(
         radiusSlider = view.findViewById(R.id.radius_slider)
         expiredCheckBox = view.findViewById(R.id.expired_checkbox)
         mineOnlyCheckBox = view.findViewById(R.id.mine_checkbox)
-//        filterOption2CheckBox = view.findViewById(R.id.filter_option2)
         clearButton = view.findViewById(R.id.clear_button)
         applyButton = view.findViewById(R.id.apply_button)
         val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
@@ -89,8 +83,6 @@ class MapFilterDrawerFragment(
 
         applyButton.setOnClickListener {
 
-//            val listener = activity as? FilterDrawerListener
-//            val listener = parentFragment as? FilterDrawerListener
             val listener = filterCallback
             listener?.onFilterApplied(
                 cameraToggle.isChecked,

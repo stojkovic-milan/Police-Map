@@ -46,7 +46,6 @@ class PlaceListFragment : Fragment(), MapFilterDrawerFragment.FilterDrawerListen
         super.onCreate(savedInstanceState)
 
         databaseRef = FirebaseFirestore.getInstance().collection("places")
-//        FirebaseDatabase.getInstance().getReference("places")
     }
 
     override fun onCreateView(
@@ -55,7 +54,6 @@ class PlaceListFragment : Fragment(), MapFilterDrawerFragment.FilterDrawerListen
     ): View? {
         val view = inflater.inflate(R.layout.fragment_place_list_list, container, false)
 
-        // Set up the RecyclerView
         val recyclerView = view.findViewById<RecyclerView>(R.id.list)
         recyclerView.layoutManager = LinearLayoutManager(context)
         placeAdapter = PlaceRecyclerViewAdapter(places)
@@ -202,7 +200,6 @@ class PlaceListFragment : Fragment(), MapFilterDrawerFragment.FilterDrawerListen
 
     override fun onStart() {
         super.onStart()
-        // Add a ValueEventListener to fetch and observe changes to the user data
         snapshotListener = databaseRef.orderBy("rating").addSnapshotListener { snapshot, error ->
             if (error != null) {
                 // Handle database error

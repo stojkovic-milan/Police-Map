@@ -59,27 +59,20 @@ class PlaceRecyclerViewAdapter(
 
         userRef.addListenerForSingleValueEvent(object : ValueEventListener {
             override fun onDataChange(dataSnapshot: DataSnapshot) {
-                // Check if the user node exists and has children
                 if (dataSnapshot.exists() && dataSnapshot.hasChildren()) {
-                    // Retrieve the username value from the dataSnapshot
                     val username = dataSnapshot.child("username").getValue(String::class.java)
 
-                    // Check if the username is not null
                     if (username != null) {
-                        // Update the user view with the retrieved username value
                         holder.userView.text = "Reported by: %s".format(username)
                     } else {
-                        // Fallback to displaying the userId if the username is null
                         holder.userView.text = "Reported by: %s".format(item.userId)
                     }
                 } else {
-                    // Fallback to displaying the userId if the user node doesn't exist or has no children
                     holder.userView.text = item.userId
                 }
             }
 
             override fun onCancelled(databaseError: DatabaseError) {
-                // Handle database error
                 holder.userView.text = item.userId
             }
         })
@@ -126,8 +119,6 @@ class PlaceRecyclerViewAdapter(
         val iconView: ImageView = binding.reportIcon
         val expiredChip: Chip = binding.chipExpired
 
-//        val idView: TextView = binding.itemNumber
-//        val contentView: TextView = binding.content
 
         override fun toString(): String {
             return super.toString() + " '" + typeView.text + "'"

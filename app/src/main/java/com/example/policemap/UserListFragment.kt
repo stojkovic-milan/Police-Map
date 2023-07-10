@@ -40,7 +40,6 @@ class UserListFragment : Fragment() {
     ): View? {
         val view = inflater.inflate(R.layout.fragment_user_list_list, container, false)
 
-        // Set up the RecyclerView
         val recyclerView = view.findViewById<RecyclerView>(R.id.list)
         recyclerView.layoutManager = LinearLayoutManager(context)
         userAdapter = MyUserListRecyclerViewAdapter(users)
@@ -52,7 +51,6 @@ class UserListFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        // Add a ValueEventListener to fetch and observe changes to the user data
         databaseRef.orderByChild("points").addValueEventListener(object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 users.clear()
@@ -66,7 +64,6 @@ class UserListFragment : Fragment() {
             }
 
             override fun onCancelled(error: DatabaseError) {
-                // Handle database error
             }
         })
     }
