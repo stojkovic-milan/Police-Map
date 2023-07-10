@@ -58,7 +58,6 @@ class AddPlaceDialogFragment(newMarker: Marker) : DialogFragment() {
         // to modify any dialog characteristics. For example, the dialog includes a
         // title by default, but your custom layout might not need it. So here you can
         // remove the dialog title, but you must call the superclass to get the Dialog.
-//        val dialog = super.onCreateDialog(savedInstanceState)
         val dialog = Dialog(requireContext(), R.style.FloatingDialogTheme)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
         return dialog
@@ -82,8 +81,6 @@ class AddPlaceDialogFragment(newMarker: Marker) : DialogFragment() {
         }
         auth = FirebaseAuth.getInstance()
         buttonAdd.setOnClickListener {
-            // Save the selected date and time
-            // Do something with the selected date and time
             val selectedRadioButton =
                 view.findViewById<RadioButton>(typeRadioGroup.checkedRadioButtonId)
 
@@ -95,65 +92,86 @@ class AddPlaceDialogFragment(newMarker: Marker) : DialogFragment() {
             val longitude = arguments?.getDouble("lng", 0.0)
             val location = LatLng(latitude!!, longitude!!)
             val expirationTime: Calendar = Calendar.getInstance()
-            if (placeType == PlaceType.Camera) expirationTime.add(
-                Calendar.MONTH,
-                1
-            ) else if (placeType == PlaceType.Control || placeType == PlaceType.Radar) expirationTime.add(
-                Calendar.HOUR,
-                2
-            ) else expirationTime.add(Calendar.MINUTE, 30)
-            //TODO: Add empty and null checks here
-            val newPlace = PlaceDb(
-                placeId,
-                location.latitude,
-                location.longitude,
-                time,
-                1,
-                placeType,
-                userId,
-                expirationTime.time
+            when (placeType) {
+                PlaceType.Camera -> expirationTime.add(
+                    Calendar.MONTH,
+                    1
+                )
+                PlaceType.Control, PlaceType.Radar -> expirationTime.add(
+                    Calendar.HOUR,
+                    2
+                )
+                else -> expirationTime.add(Calendar.MINUTE, 30)
+            }
+            var valid = true
+            if (location == null
+                || placeId == null
+                || userId == null
+                || expirationTime == null
+                || placeType == null
+                || time == null
             )
-            val userRef = database.reference.child("users").child(userId)
-            val placeRef = db.collection("places").document(placeId)
-            placeRef.set(newPlace)
-                .addOnSuccessListener {
-                    // Document was successfully written
-                    //Store location alose in GeoFire
-                    geoFire.setLocation(
-                        placeId,
-                        GeoLocation(location.latitude, location.longitude)
-                    )
-                    tempMarker.remove()
-                    val usersWhoRatedRef =
-                        placeRef.collection("usersWhoRated") // create a subcollection called "usersWhoRated"
-                    usersWhoRatedRef.document(userId).set(mapOf("rated" to true))
+                valid = false
+
+            if (valid) {
+                val newPlace = PlaceDb(
+                    placeId,
+                    location.latitude,
+                    location.longitude,
+                    time,
+                    1,
+                    placeType,
+                    userId,
+                    expirationTime.time
+                )
+                val userRef = database.reference.child("users").child(userId)
+                val placeRef = db.collection("places").document(placeId)
+                placeRef.set(newPlace)
+                    .addOnSuccessListener {
+                        //Store location also in GeoFire
+                        geoFire.setLocation(
+                            placeId,
+                            GeoLocation(location.latitude, location.longitude)
+                        )
+                        tempMarker.remove()
+                        val usersWhoRatedRef =
+                            placeRef.collection("usersWhoRated") // subcollection "usersWhoRated"
+                        usersWhoRatedRef.document(userId).set(mapOf("rated" to true))
 
 
-                    userRef.get().addOnSuccessListener { userDataSnapshot ->
-                        val currentPoints =
-                            userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
-                        val increasedPoints = currentPoints + 100
-                        userRef.child("points").setValue(increasedPoints)
-                            .addOnSuccessListener {
-                                Toast.makeText(
-                                    requireContext(),
-                                    "New report added successfully!",
-                                    Toast.LENGTH_LONG
-                                ).show()
-                            }
+                        userRef.get().addOnSuccessListener { userDataSnapshot ->
+                            val currentPoints =
+                                userDataSnapshot.child("points").getValue(Int::class.java) ?: 0
+                            val increasedPoints = currentPoints + 100
+                            userRef.child("points").setValue(increasedPoints)
+                                .addOnSuccessListener {
+                                    Toast.makeText(
+                                        requireContext(),
+                                        "You just gained 100 points for new report!",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                        }
                     }
-                }
-                .addOnFailureListener { e ->
-                    // Handle any errors that occurred during the write operation
-                    Toast.makeText(
-                        requireContext(),
-                        "Error occurred when adding new report!",
-                        Toast.LENGTH_LONG
-                    )
-                        .show()
-                }
-            dismiss()
+                    .addOnFailureListener { e ->
+                        Toast.makeText(
+                            requireContext(),
+                            "Error occurred when adding new report!",
+                            Toast.LENGTH_LONG
+                        )
+                            .show()
+                    }
+                dismiss()
+            } else {
+                Toast.makeText(
+                    requireContext(),
+                    "Missing information when adding new report!",
+                    Toast.LENGTH_LONG
+                )
+                    .show()
+            }
         }
+
         buttonDiscard.setOnClickListener {
             dismiss()
             tempMarker.remove()
@@ -199,7 +217,6 @@ class AddPlaceDialogFragment(newMarker: Marker) : DialogFragment() {
                         val pattern = "HH:mm:ss  dd.MM"
                         val simpleDateFormat = SimpleDateFormat(pattern)
 
-//                        val dateTimeString = selectedDateTime.time.toString()
                         val dateTimeString = simpleDateFormat.format(selectedDateTime.time)
                         editTextDateTime.setText(dateTimeString)
                     },

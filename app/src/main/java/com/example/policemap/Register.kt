@@ -41,7 +41,6 @@ class Register : AppCompatActivity() {
 
     public override fun onStart() {
         super.onStart()
-        // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if (currentUser != null) {
             var intent = Intent(baseContext, MainActivity::class.java)
@@ -117,8 +116,6 @@ class Register : AppCompatActivity() {
                             finish()
                         } else {
                             progressBar.visibility = View.GONE
-                            // If sign in fails, display a message to the user.
-//                            Log.w(TAG, "createUserWithEmail:failure", task.exception)
                             Toast.makeText(
                                 baseContext,
                                 "Authentication failed.",
@@ -130,7 +127,6 @@ class Register : AppCompatActivity() {
         }
 
         btnUploadPicture.setOnClickListener {
-            // Open the camera or gallery to upload/take a picture
             openCameraOrGallery()
         }
     }
@@ -143,11 +139,8 @@ class Register : AppCompatActivity() {
     }
 
     private fun uploadInfo(id: String, email: String, name: String, number: String) {
-//        val userID: String = auth.currentUser?.uid ?: ""
         val userID: String = id
-//        if(userID=="")
-//        _actionState.value = ActionState.ActionError("Greska kod upload-a podataka")
-        //Upload slike
+        //Image upload
         var storage = Firebase.storage
         var imageRef: StorageReference? =
             storage.reference.child("users").child(userID).child("${email}.jpg")
@@ -166,7 +159,6 @@ class Register : AppCompatActivity() {
                             Log.d("SIGNUP", "User account deleted")
                         }
                     }
-//                    _actionState.value = ActionState.ActionError("Upload error: ${it.message}")
                 }
             }
             imageRef.downloadUrl
@@ -175,8 +167,6 @@ class Register : AppCompatActivity() {
                 val imageUrl = task.result.toString()
 
                 val user = User(userID, name, email, number, imageUrl, 0)
-//                val user = User(name.value, imageUrl)
-//                val user = LoggedInUser(userID, email)
                 val database =
                     Firebase.database("https://police-map-22d2d-default-rtdb.europe-west1.firebasedatabase.app/")
                 val userRef = database.reference.child("users").child(userID).setValue(user)
@@ -188,7 +178,6 @@ class Register : AppCompatActivity() {
                 }
 
                 auth.currentUser!!.updateProfile(profileUpdate).addOnCompleteListener {
-//                        _actionState.value = ActionState.Success
                 }
             }
         }

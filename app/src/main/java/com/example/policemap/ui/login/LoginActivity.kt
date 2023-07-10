@@ -28,7 +28,6 @@ class LoginActivity : AppCompatActivity() {
 
     public override fun onStart() {
         super.onStart()
-        // Check if user is signed in (non-null) and update UI accordingly.
         val currentUser = auth.currentUser
         if (currentUser != null) {
             var intent = Intent(baseContext, MainActivity::class.java)
@@ -48,9 +47,7 @@ class LoginActivity : AppCompatActivity() {
         val login = binding.login
         val loading = binding.loading
 
-        //Moj deo
         val register = binding.registerInstead
-        //
 
         loginViewModel = ViewModelProvider(this, LoginViewModelFactory())
             .get(LoginViewModel::class.java)
@@ -81,7 +78,6 @@ class LoginActivity : AppCompatActivity() {
             }
             setResult(Activity.RESULT_OK)
 
-            //Complete and destroy login activity once successful
             finish()
         })
 
@@ -113,7 +109,6 @@ class LoginActivity : AppCompatActivity() {
 
             login.setOnClickListener {
                 loading.visibility = View.VISIBLE
-//                loginViewModel.login(username.text.toString(), password.text.toString())
                 login(username.text.toString(), password.text.toString())
             }
             register?.setOnClickListener {
@@ -125,12 +120,10 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun updateUiWithUser(model: LoggedInUserView) {
-        val welcome = getString(R.string.welcome)
         val displayName = model.displayName
-        // TODO : initiate successful logged in experience | USE SNACKBAR INSTEAD
         Toast.makeText(
             applicationContext,
-            "$welcome $displayName",
+            "Welcome, $displayName",
             Toast.LENGTH_LONG
         ).show()
     }
@@ -144,7 +137,6 @@ class LoginActivity : AppCompatActivity() {
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
-                    // Sign in success, update UI with the signed-in user's information
                     val user = auth.currentUser
                     Toast.makeText(
                         baseContext,
@@ -156,7 +148,6 @@ class LoginActivity : AppCompatActivity() {
                     startActivity(intent)
                     finish()
                 } else {
-                    // If sign in fails, display a message to the user.
                     Toast.makeText(
                         baseContext,
                         "Authentication failed.",

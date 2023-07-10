@@ -46,7 +46,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
     private val placesList = mutableListOf<Place>()
     private lateinit var auth: FirebaseAuth
 
-    //    private val markerRatingMap = HashMap<Marker, Boolean>()
     private val placeRatingMap = HashMap<String, Boolean>()
     private val currentRatingsMap = HashMap<String, Int>()
     private val placesOnMap = HashMap<String, Place>()
@@ -54,12 +53,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
     private lateinit var geoQuery: GeoQuery
     private lateinit var clusterManager: ClusterManager<Place>
 
-    private val places: MutableList<Place> = mutableListOf(
-        Place(null, LatLng(43.313850, 21.897023), Date(), 4, PlaceType.Radar),
-        Place(null, LatLng(43.314952, 21.894705), Date(), 2, PlaceType.Control),
-        Place(null, LatLng(43.314952, 21.895705), Date(), -5, PlaceType.Camera),
-        Place(null, LatLng(43.315952, 21.897705), Date(), 1, PlaceType.Patrol)
-    )
     private var googleMap: GoogleMap? = null
     private var myMarker: Marker? = null
     private var lastLocation: LatLng? = null
@@ -89,7 +82,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
          * user has installed Google Play services and returned to the app.
          */
         this.googleMap = googleMap
-//        addClusteredMarkers(googleMap)
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(43.313850, 21.897023), 15f))
         val mainActivity = activity as MainActivity
         val currentLocation = mainActivity.getCurrentLocation()
@@ -97,17 +89,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             if (reason == GoogleMap.OnCameraMoveStartedListener.REASON_GESTURE)
                 setFollow(false)
         }
-//        googleMap.setOnMarkerDragListener(object : OnMarkerDragListener {
-//            override fun onMarkerDragStart(marker: Marker?) {
-//            }
-//
-//            override fun onMarkerDrag(marker: Marker?) {
-//            }
-//
-//            override fun onMarkerDragEnd(marker: Marker?) {
-////                markerPos = marker.position
-//            }
-//        })
+
         initializeClusterManager(googleMap)
         updateLocation(currentLocation)
 
@@ -175,7 +157,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         var keyList: MutableList<String> = mutableListOf()
         geoQuery.addGeoQueryEventListener(object : GeoQueryEventListener {
             override fun onKeyEntered(key: String?, location: GeoLocation?) {
-                // Key entered the query area, display the place on the map
                 if (key != null && location != null) {
                     val placeLatitude = location.latitude
                     val placeLongitude = location.longitude
@@ -232,15 +213,12 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
                         }
                     }
                         ?.addOnFailureListener { exception ->
-                            // Handle any errors that occurred during the retrieval
-                            // ...
                         }
 
                 }
             }
 
             override fun onKeyExited(key: String?) {
-                // Key exited the query area, remove the place from the map or list view
                 keyList.remove(key)
                 var placeLeft = placesOnMap[key]
                 if (placeLeft != null) {
@@ -252,15 +230,12 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             }
 
             override fun onKeyMoved(key: String?, location: GeoLocation?) {
-                // Key moved within the query area, update the place's position on the map or list view
             }
 
             override fun onGeoQueryReady() {
-                // All initial place data has been loaded, do any final processing or UI updates
             }
 
             override fun onGeoQueryError(error: DatabaseError?) {
-                // Handle any errors that occurred during the query
             }
         })
     }
@@ -317,11 +292,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
                     .title("Nova lokacija").icon(addIcon)
                     .zIndex(1.0f)
                     .draggable(true)
-//                    .anchor(0.5f, 0.5f) // Set the anchor point to the center of the marker icon
-//                    .infoWindowAnchor(
-//                        0.5f,
-//                        0.5f
-//                    ) // Set the info window anchor point to the center of the marker icon
+
 
             Snackbar.make(
                 view!!,
@@ -335,7 +306,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18F))
         } else {
             //Confirm marker location and enter next data
-//            fabAdd.hide()
             addingPlace = false
             newMarker?.setIcon(stopIcon)
 
@@ -350,9 +320,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             )
 
             showDialog()
-//            places.add(Place("Novo Mesto", newMarker!!.position, Date(), 1.0f, Type.Control))
-//            newMarker!!.remove()
-//            addClusteredMarkers(googleMap!!)
 
         }
         fabAdd?.setImageDrawable(
@@ -392,13 +359,11 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         val placeRef = db.collection("places").document(place.id!!)
         val listener = placeRef.addSnapshotListener { snapshot, exception ->
             if (exception != null) {
-                // Handle any errors that occurred
                 return@addSnapshotListener
             }
 
             if (snapshot != null && snapshot.exists()) {
                 val rating = snapshot.getLong("rating")?.toInt()
-                // Handle the updated rating value here
                 if (rating != null)
                     currentRatingsMap[place.id] = rating
             }
@@ -428,7 +393,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         clusterManager.markerCollection.setInfoWindowAdapter(
             MarkerInfoWindowAdapter(
                 requireContext(),
-//                markerRatingMap
                 placeRatingMap,
                 currentRatingsMap
             )
@@ -439,16 +403,14 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             val isRated: Boolean = placeRatingMap[place.id] ?: false
 
             if (isRated) {
-//                markerRatingMap[it] = true
-                // The place has been rated by the user
-                // Do something
-                //TODO: Add snackbar that says place is already rated by you
+                Toast.makeText(
+                    context,
+                    "You have already rated this place!",
+                    Toast.LENGTH_LONG
+                ).show()
             } else {
-                // The place has not been rated by the user
-                // Do something else
-//                markerRatingMap[it] = false
                 val distance = calculateDistanceBetweenLatLng(place.latLng!!, lastLocation!!)
-                //Can rate places in radius of 3KM
+                //User can rate places in radius of 3KM, to avoid abuse
                 if (distance < 3000) {
                     it.hideInfoWindow()
                     showRateDialog(place)
@@ -503,8 +465,7 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
                 callback(isRated)
             }
             .addOnFailureListener { exception ->
-                // Handle the error here
-                callback(false) // Assume it is not rated in case of an error
+                callback(false)
             }
     }
 
@@ -619,8 +580,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
                 }
             }
         }.addOnFailureListener { e ->
-            // Error occurred during the rating update
-            // Handle the error here
             Toast.makeText(
                 context,
                 "Faiure updating rating!",
@@ -645,14 +604,14 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             val newQueryCenter = GeoLocation(currentLocation.latitude, currentLocation.longitude)
             geoQuery.center = newQueryCenter
         }
+        //Fixed size marker using anchor
         val markerOptions = MarkerOptions().position(latLng).title("Vi ste ovde!").icon(gpsIcon)
-            .anchor(0.5f, 0.5f) // Set the anchor point to the center of the marker icon
+            .anchor(0.5f, 0.5f)
             .infoWindowAnchor(
                 0.5f,
                 0.5f
-            ) // Set the info window anchor point to the center of the marker icon
+            )
 
-//        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
         if (myMarker == null)
             myMarker = googleMap?.addMarker(markerOptions)
         else
@@ -663,7 +622,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
             googleMap?.animateCamera(cameraUpdate)
         }
 
-//        googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
     }
 
     private fun showFilterDrawer() {
@@ -704,16 +662,13 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
         clusterManager.removeItems(placesOnMap.values)
         clusterManager.cluster()
         //Clearing current maps
-        //Test?
         placesOnMap.clear()
         placeRatingMap.clear()
         currentRatingsMap.clear()
-        //
         initializeGeoQuery()
     }
 
     private val stopIcon: BitmapDescriptor by lazy {
-//        val color = ContextCompat.getColor(requireContext(), R.color.purple_500)
         BitmapHelper.vectorToBitmap(requireContext(), R.drawable.police_stop_48)
     }
     private val radarIcon: BitmapDescriptor by lazy {
