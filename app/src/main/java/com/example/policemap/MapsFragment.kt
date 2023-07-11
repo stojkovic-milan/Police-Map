@@ -511,11 +511,6 @@ class MapsFragment : Fragment(), RatingDialogFragment.RatingDialogCallback,
     }
 
     override fun onRatingSubmitted(placeId: String, rating: Int) {
-        Toast.makeText(
-            context,
-            "Rating received %d back for place %s".format(rating, placeId),
-            Toast.LENGTH_LONG
-        ).show()
         updatePlaceRatingDb(placeId, rating)
     }
 
